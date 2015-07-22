@@ -1,8 +1,9 @@
 file(GLOB_RECURSE TubesSources
 	"Tubes.h"
-	"TubesLibraryDefine.h"
 	"Tubes.cpp"
-	
+	"TubesLibraryDefine.h"
+	"TubesUtility.h"
+	"TubesUtility.cpp"
 )
 
 add_definitions(-DTUBES_DLL_EXPORT)
