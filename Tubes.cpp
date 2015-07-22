@@ -19,7 +19,7 @@ bool Tubes::Initialize() {
 			LogErrorMessage( "Failed to initialize Tubes since WSAStartup failed" );	
 	}
 #else 
-	m_IsInitialized = true;
+	m_Initialized = true;
 #endif
 
 	if ( m_Initialized ) {

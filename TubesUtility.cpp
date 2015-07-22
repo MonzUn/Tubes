@@ -12,6 +12,6 @@ tString TubesUtility::GetErrorName( int errorCode ) { // TODODB: See if the wind
 	str.assign( ws.begin(), ws.end() );
 	return str;
 #else
-	return strerror( error );
+	return strerror( errorCode );
 #endif
 }
