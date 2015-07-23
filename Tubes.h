@@ -7,6 +7,11 @@ public:
 	TUBES_API void Shutdown();
 	TUBES_API void Update();
 
+	TUBES_API bool GetHostFlag() const;
+
+	TUBES_API void SetHostFlag( bool isHost );
+
 private:
-	bool m_Initialized = false;
+	bool m_Initialized	= false;
+	bool m_HostFlag		= false;
 };

@@ -49,3 +49,11 @@ void Tubes::Update() {
 		LogWarningMessage( "Attempted to update uninitialized instance of Tubes" );
 	}
 }
+
+bool Tubes::GetHostFlag() const {
+	return m_HostFlag;
+}
+
+void Tubes::SetHostFlag( bool newHostFlag ) {
+	m_HostFlag = newHostFlag;
+}
