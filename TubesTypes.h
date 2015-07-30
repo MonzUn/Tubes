@@ -7,5 +7,6 @@
 #define SOCKET_ERROR	-1
 #endif
 
-typedef uint16_t Port;
-typedef uint64_t Socket;
+typedef uint32_t	Address;
+typedef uint16_t	Port;
+typedef int64_t		Socket;
