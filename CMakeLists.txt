@@ -10,6 +10,8 @@ file(GLOB_RECURSE TubesSources
 	"TubesErrors.h"
 	"Connection.h"
 	"Connection.cpp"
+	"ConnectionManager.h"
+	"ConnectionManager.cpp"
 )
 
 add_definitions(-DTUBES_DLL_EXPORT)
