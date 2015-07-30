@@ -31,4 +31,5 @@ namespace TubesUtility {
 
 	tString			GetErrorName( int errorCode );
 	tString			AddressToIPv4String( Address address );
+	Address			IPv4StringToAddress( const tString& addressString );
 }
