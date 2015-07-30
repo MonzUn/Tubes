@@ -1,4 +1,5 @@
 #include "ConnectionManager.h"
+#include <thread>
 #include "TubesUtility.h"
 #include "Connection.h"
 
@@ -11,7 +12,13 @@
 #define CONNECTION_TIMEOUT_SECONDS 2 // TODODB: Make this a settable variable
 
 using namespace TubesUtility;
-Connection* ConnectionManager::Connect( const tString& address, Port port ) {
+
+void ConnectionManager::RequestConnection( const tString& address, Port port ) {
+	std::thread connectionThread = std::thread( &ConnectionManager::Connect, this, address, port ); // TODODB: Use a thread pool
+	connectionThread.detach();
+}
+
+void ConnectionManager::Connect( const tString& address, Port port ) {
 	Connection* connection = pNew( Connection, address, port );
 
 	// Set up the socket
@@ -19,7 +26,7 @@ Connection* ConnectionManager::Connect( const tString& address, Port port ) {
 	if ( connection->socket <= 0 ) {
 		LogErrorMessage( "Failed to create socket" );
 		pDelete( connection );
-		return nullptr;
+		return;
 	}
 
 	connection->SetBlockingMode( false );
@@ -40,7 +47,7 @@ Connection* ConnectionManager::Connect( const tString& address, Port port ) {
 	if ( ( result = connect( connection->socket, reinterpret_cast<sockaddr*>( &connection->sockaddr ), sizeof( sockaddr_in ) ) ) == INVALID_SOCKET ) {
 		if ( !SHOULD_WAIT_FOR_TIMEOUT ) {
 			pDelete( connection );
-			return nullptr;
+			return;
 		}
 	}
 	result = select( static_cast<int>( connection-> socket + 1 ), NULL, &set, NULL, &timeOut );
@@ -49,15 +56,17 @@ Connection* ConnectionManager::Connect( const tString& address, Port port ) {
 	if ( result == 0 ) {
 		LogInfoMessage( "Connection attempt to " + address + " timed out" );
 		pDelete( connection );
-		return nullptr;
+		return;
 	} else if ( result < 0 ) {
 		LogErrorMessage( "Connection attempt to " + address + " failed" );
 		pDelete( connection );
-		return nullptr;
+		return;
 	}
 
 	connection->SetNoDelay();
 
 	LogInfoMessage( "Connection attempt to " + address + " was successfull!" );
-	return connection;
+	m_UnverifiedConnectionsLock.lock();
+	m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, NEW_OUT ) );
+	m_UnverifiedConnectionsLock.unlock();
 }

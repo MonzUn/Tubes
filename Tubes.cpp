@@ -50,6 +50,14 @@ void Tubes::Update() {
 	}
 }
 
+void Tubes::RequestConnection( const tString& address, uint16_t port ) {
+	if ( m_Initialized ) {
+		m_ConnectionManager.RequestConnection( address, port );
+	} else {
+		LogWarningMessage( "Attempted to request a connection although the Tubes instance is uninitialized" );
+	}
+}
+
 bool Tubes::GetHostFlag() const {
 	return m_HostFlag;
 }
