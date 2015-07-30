@@ -15,3 +15,13 @@ tString TubesUtility::GetErrorName( int errorCode ) { // TODODB: See if the wind
 	return strerror( errorCode );
 #endif
 }
+
+tString	TubesUtility::AddressToIPv4String( Address address ) {
+	// Split address in its components
+	unsigned short ip1 = ( address >> 24 );
+	unsigned short ip2 = ( address >> 16 ) & 0xFF;
+	unsigned short ip3 = ( address >> 8 ) & 0xFF;
+	unsigned short ip4 =  address & 0xFF;
+
+	return rToString( ip1 ) + "." + rToString( ip2 ) + "." + rToString( ip3 ) + "." + rToString( ip4 );
+}

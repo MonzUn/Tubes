@@ -7,6 +7,7 @@
 #elif PLATFORM == PLATFORM_LINUX
 #include <string.h> // Needed for strerror
 #endif
+#include "TubesTypes.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
 #define GET_NETWORK_ERROR WSAGetLastError()
@@ -29,4 +30,5 @@ namespace TubesUtility {
 	const int		MAX_LISTENING_BACKLOG	= 16;				// How many incoming connections that can be connecting at the same time
 
 	tString			GetErrorName( int errorCode );
+	tString			AddressToIPv4String( Address address );
 }
