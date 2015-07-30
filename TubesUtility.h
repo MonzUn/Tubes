@@ -14,11 +14,6 @@
 #define GET_NETWORK_ERROR errno
 #endif
 
-#if PLATFORM != PLATFORM_WINDOWS // winsock already defines this on windows
-#define INVALID_SOCKET	~0
-#define SOCKET_ERROR	-1
-#endif
-
 // Always output errors through this define or string constructors may overwrite errno
 #define LogInfoMessage( outputMessage )		{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( outputMessage, TubesUtility::LOGGER_NAME, LogSeverity::INFO_MSG ); }
 #define LogDebugMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( outputMessage, TubesUtility::LOGGER_NAME, LogSeverity::DEBUG_MSG ); }
