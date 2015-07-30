@@ -8,7 +8,8 @@ file(GLOB_RECURSE TubesSources
 	"TubesSocket.cpp"
 	"TubesTypes.h"
 	"TubesErrors.h"
-	"IPAddress.h"
+	"Connection.h"
+	"Connection.cpp"
 )
 
 add_definitions(-DTUBES_DLL_EXPORT)
