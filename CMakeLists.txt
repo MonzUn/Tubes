@@ -4,6 +4,10 @@ file(GLOB_RECURSE TubesSources
 	"TubesLibraryDefine.h"
 	"TubesUtility.h"
 	"TubesUtility.cpp"
+	"TubesSocket.h"
+	"TubesSocket.cpp"
+	"TubesTypes.h"
+	"TubesErrors.h"
 )
 
 add_definitions(-DTUBES_DLL_EXPORT)
