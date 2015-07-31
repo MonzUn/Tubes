@@ -9,6 +9,8 @@ public:
 	TUBES_API void Update();
 
 	TUBES_API void RequestConnection( const tString& address, uint16_t port );
+	TUBES_API void StartListener( uint16_t port );
+	TUBES_API void StopAllListeners();
 
 	TUBES_API bool GetHostFlag() const;
 

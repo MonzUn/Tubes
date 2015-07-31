@@ -1,6 +1,7 @@
 #include "ConnectionManager.h"
 #include <thread>
 #include "TubesUtility.h"
+#include "TubesErrors.h"
 #include "Connection.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
@@ -18,16 +19,71 @@ void ConnectionManager::RequestConnection( const tString& address, Port port ) {
 	connectionThread.detach();
 }
 
-void ConnectionManager::Connect( const tString& address, Port port ) {
-	Connection* connection = pNew( Connection, address, port );
+void ConnectionManager::StartListener( Port port ) { // TODODB: Add check against duplicates
 
-	// Set up the socket
-	connection->socket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Adress Family = INET and the protocol to be used is TCP
-	if ( connection->socket <= 0 ) {
-		LogErrorMessage( "Failed to create socket" );
-		pDelete( connection );
+	Socket listeningSocket = static_cast<Socket>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Will be used to listen for incoming connections
+	if ( listeningSocket == INVALID_SOCKET ) {
+		LogErrorMessage( "Failed to set up listening socket" );
 		return;
 	}
+
+	// Allow reuse of listening socket port
+	char reuse = 1;
+	setsockopt( listeningSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof( char ) ); // TODODB: Check return value
+
+	// Set up the sockaddr for the listenign socket
+	sockaddr_in sockAddr;
+	memset( &sockAddr, 0, sizeof( sockAddr ) );
+	sockAddr.sin_family			= AF_INET;
+	sockAddr.sin_addr.s_addr	= htonl( INADDR_ANY );
+	sockAddr.sin_port			= htons( port );
+
+	//Bind the listening socket object to an actual socket.
+	if ( bind( listeningSocket, ( sockaddr* )&sockAddr, sizeof( sockAddr ) ) < 0 ) {
+		LogErrorMessage( "Failed to bind listening socket" );
+		return;
+	}
+
+	// Start listening for incoming connections
+	if ( listen( listeningSocket, MAX_LISTENING_BACKLOG ) < 0 ) {
+		LogErrorMessage( "Failed to start listening socket" );
+		return;
+	}
+
+	LogInfoMessage( "Listening for incoming connections on port " + rToString( port ) );
+	Listener* listener = pNew( Listener ); // TODODB: See if we can change stuff around to get this off the heap
+	std::thread* thread = pNew( std::thread, &ConnectionManager::Listen, this, listeningSocket, listener->ShouldTerminate );
+	listener->Thread = thread;
+	listener->ListeningSocket = listeningSocket;
+	
+	m_ListenerMap.emplace( port, listener );
+}
+
+void ConnectionManager::StopAllListeners() {
+	// Signal all listeners to stop
+	for ( auto portListenerPair : m_ListenerMap ) {
+		*portListenerPair.second->ShouldTerminate = true;
+		ShutdownAndCloseSocket( portListenerPair.second->ListeningSocket );
+	}
+
+	// Join all listener threads (Should hopefully avoid blocks since they've all been signalled to stop previously)
+	for ( auto portListenerPair : m_ListenerMap ) {
+		portListenerPair.second->Thread->join();
+		pDelete( portListenerPair.second );
+	}
+
+	m_ListenerMap.clear();
+}
+
+void ConnectionManager::Connect( const tString& address, Port port ) {
+	// Set up the socket
+	Socket connectionSocket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Adress Family = INET and the protocol to be used is TCP
+	if ( connectionSocket <= 0 ) {
+		LogErrorMessage( "Failed to create socket" );
+		return;
+	}
+
+	Connection* connection = pNew( Connection, connectionSocket, address, port );
 
 	connection->SetBlockingMode( false );
 
@@ -69,4 +125,46 @@ void ConnectionManager::Connect( const tString& address, Port port ) {
 	m_UnverifiedConnectionsLock.lock();
 	m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, NEW_OUT ) );
 	m_UnverifiedConnectionsLock.unlock();
+}
+
+void ConnectionManager::Listen( Socket listeningsSocket, std::atomic_bool* shouldTerminate ) {
+	do {
+		Socket					incomingConnectionSocket;
+		sockaddr_in				incomingConnectionInfo;
+		socklen_t				incomingConnectionInfoLength = sizeof( incomingConnectionInfo );
+
+		// Wait for a connection or fetch one from the backlog
+		incomingConnectionSocket = static_cast<Socket>( accept( listeningsSocket, reinterpret_cast<sockaddr*>( &incomingConnectionInfo ), &incomingConnectionInfoLength ) ); // Blocking
+		if ( incomingConnectionSocket != INVALID_SOCKET ) {
+			Connection* connection = pNew( Connection, incomingConnectionSocket, incomingConnectionInfo );
+			m_UnverifiedConnectionsLock.lock();
+			m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, NEW_IN ) );
+			m_UnverifiedConnectionsLock.unlock();
+		} else {
+			int error = GET_NETWORK_ERROR;
+			if ( error != TUBES_EINTR ) // The socket was killed on purpose
+				LogErrorMessage( "Incoming connection attempt failed" );
+		}
+	} while ( !*shouldTerminate );
+}
+
+void ConnectionManager::ShutdownAndCloseSocket( Socket socket ) {
+	int result;
+#if PLATFORM == PLATFORM_WINDOWS
+	result = shutdown( socket, SD_BOTH );
+#else
+	result = shutdown( socket, SHUT_RDWR );
+#endif
+	if ( result != 0 )
+		LogErrorMessage( "Failed to shut down socket" );
+
+#if PLATFORM == PLATFORM_WINDOWS
+	result = closesocket( socket );
+#else
+	result = close( socket );
+#endif
+	if ( result != 0 )
+		LogErrorMessage( "Failed to close socket" );
+
+	socket = INVALID_SOCKET;
 }

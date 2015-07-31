@@ -31,6 +31,8 @@ bool Tubes::Initialize() {
 
 void Tubes::Shutdown() {
 	if ( m_Initialized ) {
+		m_ConnectionManager.StopAllListeners();
+
 		#if PLATFORM == PLATFORM_WINDOWS
 			WSACleanup();
 		#endif
@@ -55,6 +57,22 @@ void Tubes::RequestConnection( const tString& address, uint16_t port ) {
 		m_ConnectionManager.RequestConnection( address, port );
 	} else {
 		LogWarningMessage( "Attempted to request a connection although the Tubes instance is uninitialized" );
+	}
+}
+
+void Tubes::StartListener( uint16_t port ) {
+	if ( m_Initialized ) {
+		m_ConnectionManager.StartListener( port );
+	} else {
+		LogWarningMessage( "Attempted to start listening on port " + rToString( port ) + " although the tubes instance is uninitialized" );
+	}
+}
+
+void Tubes::StopAllListeners() {
+	if ( m_Initialized ) {
+		m_ConnectionManager.StopAllListeners();
+	} else {
+		LogWarningMessage( "Attempted to stop all listeners although the tubes instance is uninitialized" );
 	}
 }
 
