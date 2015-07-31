@@ -6,7 +6,7 @@
 #endif
 
 struct Connection {
-	Connection( const tString& destinationAddress, Port destinationPortport );
+	Connection( Socket connectionSocket, const tString& destinationAddress, Port destinationPort );
 
 	bool SetBlockingMode( bool shouldBlock );
 	bool SetNoDelay(); // TODODB: Make this function take a parameter so it can be used to turn nodelay off

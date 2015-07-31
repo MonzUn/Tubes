@@ -3,10 +3,10 @@
 #include "TubesErrors.h"
 
 using namespace TubesUtility;
-Connection::Connection( const tString& destinationAddress, Port destinationPortport ) {
-	// Convert adress and port and set them
+Connection::Connection( Socket connectionSocket, const tString& destinationAddress, Port destinationPort ) {
+	socket	= connectionSocket;
 	address	= TubesUtility::IPv4StringToAddress( destinationAddress ); // TODODB: Handle ipv6
-	port	=  destinationPortport;
+	port	=  destinationPort;
 
 	memset( &sockaddr, 0, sizeof( sockaddr ) );
 	sockaddr.sin_family			= AF_INET;
