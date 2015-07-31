@@ -14,6 +14,17 @@ Connection::Connection( Socket connectionSocket, const tString& destinationAddre
 	sockaddr.sin_port			= htons( port );
 }
 
+Connection::Connection( Socket connectionSocket, const sockaddr_in& destination ) {
+	socket	= connectionSocket;
+	address	= ntohl( destination.sin_addr.s_addr );
+	port	= ntohs( destination.sin_port );		// Local port if destination is a received connection
+
+	memset( &sockaddr, 0, sizeof( sockaddr_in ) );
+	sockaddr.sin_family			= AF_INET;
+	sockaddr.sin_addr.s_addr	= destination.sin_addr.s_addr;
+	sockaddr.sin_port			= destination.sin_port;
+}
+
 bool Connection::SetBlockingMode( bool shouldBlock ) {
 	int result;
 #if PLATFORM == PLATFORM_WINDOWS
