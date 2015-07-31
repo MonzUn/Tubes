@@ -1,8 +1,13 @@
 #include "ConnectionManager.h"
+
 #include <thread>
 #include "TubesUtility.h"
 #include "TubesErrors.h"
 #include "Connection.h"
+
+#if PLATFORM != PLATFORM_WINDOWS
+#include <arpa/inet.h>
+#endif
 
 #if PLATFORM == PLATFORM_WINDOWS
 #define SHOULD_WAIT_FOR_TIMEOUT static_cast<bool>( GET_NETWORK_ERROR == WSAEWOULDBLOCK )

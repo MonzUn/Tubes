@@ -2,6 +2,12 @@
 #include "TubesUtility.h"
 #include "TubesErrors.h"
 
+#if PLATFORM != PLATFORM_WINDOWS
+#include <unistd.h>
+#include <fcntl.h>
+#include <netinet/tcp.h>
+#endif
+
 using namespace TubesUtility;
 Connection::Connection( Socket connectionSocket, const tString& destinationAddress, Port destinationPort ) {
 	socket	= connectionSocket;
@@ -31,7 +37,7 @@ bool Connection::SetBlockingMode( bool shouldBlock ) {
 	unsigned long nonBlocking = static_cast<unsigned long>( !shouldBlock );
 	result = ioctlsocket( socket, FIONBIO, &nonBlocking );
 #else
-	shouldBlock ? result = fcntl( m_Socket, F_SETFL, fcntl( m_Socket, F_GETFL, 1 ) | O_NONBLOCK ) : result = fcntl( m_Socket, F_SETFL, fcntl( m_Socket, F_GETFL, 0 ) | O_NONBLOCK );
+	shouldBlock ? result = fcntl( socket, F_SETFL, fcntl( socket, F_GETFL, 1 ) | O_NONBLOCK ) : result = fcntl( socket, F_SETFL, fcntl( socket, F_GETFL, 0 ) | O_NONBLOCK );
 #endif
 	if ( result != 0 ) {
 		LogErrorMessage( "Failed to set socket to non blocking mode" );
