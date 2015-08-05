@@ -21,8 +21,9 @@
 #define LogWarningMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( outputMessage, TubesUtility::LOGGER_NAME, LogSeverity::WARNING_MSG ); }
 #define LogErrorMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( tString( outputMessage " - Error: " ) + TubesUtility::GetErrorName( __errorCode ), TubesUtility::LOGGER_NAME , LogSeverity::ERROR_MSG ); }
 
-#define LOCALHOST_IP	"127.0.0.1"
+#define LOCALHOST_IP "127.0.0.1"
 #define NETWORK_DEBUG 1
+#define NOT_EXPECTING_PAYLOAD -1
 
 namespace TubesUtility {
 	const pString	LOGGER_NAME				= "Tubes";

@@ -5,6 +5,7 @@ file(GLOB_RECURSE TubesSources
 	"TubesUtility.h"
 	"TubesUtility.cpp"
 	"TubesTypes.h"
+	"TubesTypes.cpp"
 	"TubesErrors.h"
 	"Connection.h"
 	"Connection.cpp"

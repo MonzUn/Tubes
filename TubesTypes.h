@@ -3,6 +3,9 @@
 #include <thread>
 #include <atomic>
 #include <utility/PlatformDefinitions.h>
+#include <utility/Byte.h>
+#include <utility/DataSizes.h>
+#include <memory/Alloc.h>
 #include "TubesErrors.h"
 
 #if PLATFORM != PLATFORM_WINDOWS // winsock already defines this on windows
@@ -38,4 +41,13 @@ struct Listener {
 	Socket				ListeningSocket;
 	std::thread*		Thread;
 	std::atomic_bool*	ShouldTerminate;
+};
+
+struct ReceiveBuffer {
+	ReceiveBuffer();
+
+	int16_t ExpectedHeaderBytes;	// How many more bytes of header we expect for the current packet // TODODB: 
+	int32_t ExpectedPayloadBytes;	// How many more bytes of payload we expect for the current packet
+	Byte*	PayloadData;			// Dynamic buffer for packet payload
+	Byte*	Walker;					// Pointer to where the next recv should write to
 };

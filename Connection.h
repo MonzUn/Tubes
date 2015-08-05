@@ -22,4 +22,5 @@ struct Connection {
 	Address					address;
 	Port					port;
 	struct sockaddr_in		sockaddr;
+	ReceiveBuffer			receiveBuffer;
 };
