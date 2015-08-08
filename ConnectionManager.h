@@ -7,11 +7,16 @@
 
 class ConnectionManager {
 public:
-	void RequestConnection( const tString& address, Port port );
-	void StartListener( Port port );
-	void StopAllListeners(); // TODODB: Add option to stop only specific listener
+	void		VerifyNewConnections( bool isHost );
+
+	void		RequestConnection( const tString& address, Port port );
+	void		StartListener( Port port );
+	void		StopAllListeners(); // TODODB: Add option to stop only specific listener
+
+	Connection* GetConnection( ConnectionID connectionID ) const;
 
 private:
+
 	void Connect( const tString& address, Port port );
 	void Listen( Socket listeningsSocket, std::atomic_bool* shouldTerminate );
 
@@ -19,6 +24,8 @@ private:
 
 	pVector<std::pair<Connection*, ConnectionState>> m_UnverifiedConnections;
 	std::mutex m_UnverifiedConnectionsLock;
+
+	pMap<ConnectionID, Connection*> m_Connections;
 
 	rMap<Port, Listener*> m_ListenerMap;
 };

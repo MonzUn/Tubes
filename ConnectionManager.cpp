@@ -19,6 +19,34 @@
 
 using namespace TubesUtility;
 
+void ConnectionManager::VerifyNewConnections( bool isHost ) {
+	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i ) {
+		switch ( m_UnverifiedConnections[i].second ) {
+
+			case ConnectionState::NEW_IN : {
+				if ( isHost ) {
+					// TODODB: Initiate handshake
+				} else {
+					assert( false ); // A client shouldn't receive incoming connections
+				}
+			} break;
+
+			case ConnectionState::NEW_OUT : {
+				if( !isHost ) {
+					// TODODB: Await handshake initiation from the host
+				} else {
+					assert( false ); // A host shouldn't initiate connections
+				}
+			} break;
+
+			default: {
+				assert( false, "Connection is in an unhandled connection state" );
+			} break;
+				
+		}
+	}
+}
+
 void ConnectionManager::RequestConnection( const tString& address, Port port ) {
 	std::thread connectionThread = std::thread( &ConnectionManager::Connect, this, address, port ); // TODODB: Use a thread pool
 	connectionThread.detach();
@@ -172,4 +200,15 @@ void ConnectionManager::ShutdownAndCloseSocket( Socket socket ) {
 		LogErrorMessage( "Failed to close socket" );
 
 	socket = INVALID_SOCKET;
+}
+
+Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const {
+	Connection* toReturn = nullptr;
+	if ( m_Connections.find( connectionID ) != m_Connections.end() ) {
+		toReturn = m_Connections.at( connectionID );
+	} else {
+		LogWarningMessage( "Attempted to fetch unexsisting connection (ID = " + rToString( connectionID ) + " )" );
+	}
+
+	return toReturn;
 }
