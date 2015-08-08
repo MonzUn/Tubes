@@ -1,6 +1,10 @@
 #pragma once
+#include <messaging/MessagingTypes.h>
 #include "TubesLibraryDefine.h"
 #include "ConnectionManager.h"
+
+class MessageReplicator;
+class TubesMessageReplicator;
 
 class Tubes { // TODODB: Create interface
 public:
@@ -18,6 +22,11 @@ public:
 
 private:
 	ConnectionManager m_ConnectionManager;
+
+	pMap<ReplicatorID, MessageReplicator*>	m_ReplicatorReferences;
+	TubesMessageReplicator*					m_TubesMessageReplicator;
+
+	tVector<TubesMessage*>					m_ReceivedTubesMessages;
 
 	bool m_Initialized	= false;
 	bool m_HostFlag		= false;

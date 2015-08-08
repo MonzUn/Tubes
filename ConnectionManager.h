@@ -5,9 +5,12 @@
 #include "TubesTypes.h"
 #include "Connection.h"
 
+class	TubesMessageReplicator;
+struct	TubesMessage;
+
 class ConnectionManager {
 public:
-	void		VerifyNewConnections( bool isHost );
+	void		VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator, const tVector<TubesMessage*> receivedMessages );
 
 	void		RequestConnection( const tString& address, Port port );
 	void		StartListener( Port port );
@@ -28,4 +31,6 @@ private:
 	pMap<ConnectionID, Connection*> m_Connections;
 
 	rMap<Port, Listener*> m_ListenerMap;
+
+	ConnectionID m_NextConnectionID = 1;
 };

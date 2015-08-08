@@ -1,9 +1,12 @@
 #include "ConnectionManager.h"
-
 #include <thread>
+#include <messaging/MessagingTypes.h>
+#include "TubesMessageReplicator.h"
+#include "TubesMessages.h"
 #include "TubesUtility.h"
 #include "TubesErrors.h"
 #include "Connection.h"
+#include "Communication.h"
 
 #if PLATFORM != PLATFORM_WINDOWS
 #include <arpa/inet.h>
@@ -19,13 +22,19 @@
 
 using namespace TubesUtility;
 
-void ConnectionManager::VerifyNewConnections( bool isHost ) {
+void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator, const tVector<TubesMessage*> receivedMessages ) {
 	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i ) {
 		switch ( m_UnverifiedConnections[i].second ) {
 
-			case ConnectionState::NEW_IN : {
+			case ConnectionState::NEW_IN : { // TODODB: Implement logic for checking so that the remote client really is a tubes client
 				if ( isHost ) {
-					// TODODB: Initiate handshake
+					ConnectionIDMessage idMessage = ConnectionIDMessage( m_NextConnectionID );
+					Communication::SendTubesMessage( *m_UnverifiedConnections[i].first, idMessage, replicator );
+
+					// TODODB: Call callback to let the external application know that there is a new connection
+
+					m_Connections.emplace( m_NextConnectionID++, m_UnverifiedConnections[i].first );
+					m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
 				} else {
 					assert( false ); // A client shouldn't receive incoming connections
 				}
@@ -33,7 +42,16 @@ void ConnectionManager::VerifyNewConnections( bool isHost ) {
 
 			case ConnectionState::NEW_OUT : {
 				if( !isHost ) {
-					// TODODB: Await handshake initiation from the host
+					for ( int i = 0; i < receivedMessages.size(); ++i ) {
+						if ( receivedMessages[i]->Type == Messages::CONNECTION_ID ) {
+							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( receivedMessages[i] );
+
+							// TODODB: Call callback to let the external application know that there is a new connection
+
+							m_Connections.emplace( idMessage->ID, m_UnverifiedConnections[i].first );
+							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+						}
+					}
 				} else {
 					assert( false ); // A host shouldn't initiate connections
 				}
@@ -108,7 +126,7 @@ void ConnectionManager::StopAllListeners() {
 	m_ListenerMap.clear();
 }
 
-void ConnectionManager::Connect( const tString& address, Port port ) {
+void ConnectionManager::Connect( const tString& address, Port port ) { // TODODB: Make this run on a separate thread to avoid blocking the main thread
 	// Set up the socket
 	Socket connectionSocket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Adress Family = INET and the protocol to be used is TCP
 	if ( connectionSocket <= 0 ) {

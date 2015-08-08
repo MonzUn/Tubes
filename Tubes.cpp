@@ -1,6 +1,7 @@
 #include "Tubes.h"
 #include <utility/PlatformDefinitions.h>
 #include "TubesUtility.h"
+#include "TubesMessageReplicator.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
 	#include <utility/RetardedWindowsIncludes.h>
@@ -11,7 +12,7 @@
 	#include <fcntl.h>
 #endif
 
-bool Tubes::Initialize() {
+bool Tubes::Initialize() { // TODODB: Make sure this cannot be called if the isntance is already initialized
 #if PLATFORM == PLATFORM_WINDOWS
 	WSADATA wsaData;
 	m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
@@ -23,6 +24,10 @@ bool Tubes::Initialize() {
 #endif
 
 	if ( m_Initialized ) {
+
+		m_TubesMessageReplicator = pNew( TubesMessageReplicator );
+		m_ReplicatorReferences.emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
+
 		LogInfoMessage( "Tubes was successfully initialized" );
 	}
 
@@ -36,6 +41,10 @@ void Tubes::Shutdown() {
 		#if PLATFORM == PLATFORM_WINDOWS
 			WSACleanup();
 		#endif
+
+		pDelete( m_TubesMessageReplicator );
+		m_ReplicatorReferences.clear();
+
 		LogInfoMessage( "Tubes has been shut down" );
 	} else {
 		LogWarningMessage( "Attempted to shut down uninitialized isntance of Tubes" );
@@ -46,7 +55,7 @@ void Tubes::Shutdown() {
 
 void Tubes::Update() {
 	if ( m_Initialized ) {
-
+		m_ConnectionManager.VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator, m_ReceivedTubesMessages );
 	} else {
 		LogWarningMessage( "Attempted to update uninitialized instance of Tubes" );
 	}
