@@ -13,6 +13,7 @@ file(GLOB_RECURSE TubesSources
 	"ConnectionManager.cpp"
 	"Communication.h"
 	"Communication.cpp"
+	"TubesMessageBase.h"
 )
 
 add_definitions(-DTUBES_DLL_EXPORT)
