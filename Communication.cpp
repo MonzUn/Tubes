@@ -43,13 +43,11 @@ void Communication::SendRawData( Connection& connection, const Byte* const data,
 		}
 	}
 }
-
-Message* Communication::Receive( Connection& connection, MessageReplicator& replicator ) {
+Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID, MessageReplicator*>& replicators ) {
 	if ( connection.socket == INVALID_SOCKET ) {
 		LogErrorMessage( "Attempted to receive from invalid socket" );
 		return nullptr;
 	}
-
 
 	int32_t byteCountReceived;
 	if ( connection.receiveBuffer.ExpectedHeaderBytes > 0 ) { // If we are waiting for header data
@@ -72,7 +70,10 @@ Message* Communication::Receive( Connection& connection, MessageReplicator& repl
 			connection.receiveBuffer.ExpectedHeaderBytes = 0;
 
 			// Get the size of the packet (Embedded as first part) and create a buffer of that size
-			connection.receiveBuffer.PayloadData = static_cast<Byte*>( tMalloc( connection.receiveBuffer.ExpectedPayloadBytes ) );
+			connection.receiveBuffer.PayloadData = static_cast<Byte*>( tMalloc( connection.receiveBuffer.ExpectedPayloadBytes + DataSizes::INT_64_SIZE ) ); // DataSizes::INT_64_SIZE is for writing the size at the beginning of the message
+
+			// Write down the size at the beggining so the serialization is done preperly
+			SerializationUtility::CopyAndIncrementDestination( connection.receiveBuffer.Walker, &connection.receiveBuffer.ExpectedPayloadBytes, DataSizes::INT_64_SIZE );
 
 		 connection.receiveBuffer.Walker = connection.receiveBuffer.PayloadData; // Walker now points to the new buffer since that is where we will want to write on the next recv
 		} else { // Only a part of the header was received. Account for this and handle it in an upcoming call of this function
@@ -99,7 +100,17 @@ Message* Communication::Receive( Connection& connection, MessageReplicator& repl
 
 	// If all data was received. Clean up, prepare for next call and return the buffer as a packet (Will need to be cast to the correct type on the outside using the Type field)
 	if ( byteCountReceived == connection.receiveBuffer.ExpectedPayloadBytes ) {
-		Message* message = replicator.DeserializeMessage( connection.receiveBuffer.PayloadData );
+		// Read the replicator id
+		ReplicatorID replicatorID;
+		memcpy( &replicatorID, connection.receiveBuffer.PayloadData + DataSizes::INT_64_SIZE, sizeof( ReplicatorID ) ); // DataSizes::INT_64_SIZE is for skipping the size variable embeded at the beginning of the buffer
+
+		if ( replicators.find( replicatorID ) == replicators.end() ) { // The requested replicator doesn't exist
+			LogErrorMessage( "Attemted to use replicator with id " + rToString( replicatorID ) + " but no such replicator exists" );
+			tFree( connection.receiveBuffer.PayloadData );
+			return nullptr;
+		}
+
+		Message* message = replicators.at( replicatorID )->DeserializeMessage( connection.receiveBuffer.PayloadData );
 		tFree( connection.receiveBuffer.PayloadData );
 		connection.receiveBuffer = ReceiveBuffer();
 
