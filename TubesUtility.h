@@ -19,7 +19,8 @@
 #define LogInfoMessage( outputMessage )		{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( outputMessage, TubesUtility::LOGGER_NAME, LogSeverity::INFO_MSG ); }
 #define LogDebugMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( outputMessage, TubesUtility::LOGGER_NAME, LogSeverity::DEBUG_MSG ); }
 #define LogWarningMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( outputMessage, TubesUtility::LOGGER_NAME, LogSeverity::WARNING_MSG ); }
-#define LogErrorMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( tString( outputMessage " - Error: " ) + TubesUtility::GetErrorName( __errorCode ), TubesUtility::LOGGER_NAME , LogSeverity::ERROR_MSG ); }
+#define LogErrorMessage(outputMessage)		{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( outputMessage, TubesUtility::LOGGER_NAME, LogSeverity::ERROR_MSG ); }
+#define LogAPIErrorMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( tString( outputMessage " - Error: " ) + TubesUtility::GetErrorName( __errorCode ), TubesUtility::LOGGER_NAME , LogSeverity::ERROR_MSG ); } // TODODB: Go through the code and see where this output type is applicable
 
 #define LOCALHOST_IP "127.0.0.1"
 #define NETWORK_DEBUG 1
