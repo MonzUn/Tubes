@@ -16,7 +16,7 @@
 typedef uint32_t	Address;
 typedef uint16_t	Port;
 typedef int64_t		Socket;
-typedef uint64_t	ConnectionID;
+typedef uint32_t	ConnectionID;
 
 #if PLATFORM == PLATFORM_WINDOWS
 typedef int socklen_t;
