@@ -40,7 +40,7 @@ void ConnectionManager::VerifyNewConnections( bool isHost ) {
 			} break;
 
 			default: {
-				assert( false, "Connection is in an unhandled connection state" );
+				assert( false ); // Connection is in an unhandled connection state
 			} break;
 				
 		}
