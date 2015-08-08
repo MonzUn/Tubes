@@ -13,6 +13,7 @@ file(GLOB_RECURSE TubesSources
 	"ConnectionManager.cpp"
 	"Communication.h"
 	"Communication.cpp"
+	"TubesMessages.h"
 	"TubesMessageBase.h"
 	"TubesMessageReplicator.h"
 	"TubesMessageReplicator.cpp"

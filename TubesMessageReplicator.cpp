@@ -1,8 +1,10 @@
 #include "TubesMessageReplicator.h"
 #include "TubesUtility.h"
+#include "TubesMessages.h"
 
 using namespace DataSizes;
 using namespace SerializationUtility;
+using namespace Messages;
 
 Byte* TubesMessageReplicator::SerializeMessage( const Message* message, uint64_t* outMessageSize, Byte* optionalWritingBuffer ) {
 	// Attemt to get the message size
@@ -31,8 +33,10 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, uint64_t
 
 	// Perform serialization specific to each message type (Use same order as in the type enums here)
 	switch ( message->Type ) {
-
-		// TODODB: Add message specific serialization here
+		case CONNECTION_ID: {
+			const ConnectionIDMessage* idMessage = static_cast<const ConnectionIDMessage*>( message );
+			CopyAndIncrementDestination( m_WritingWalker, &idMessage->ID, sizeof( ConnectionID ) );
+		} break;
 
 		default: {
 			LogErrorMessage( "Failed to find serialization logic for message of type " + rToString( message->Type ) );
@@ -43,7 +47,6 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, uint64_t
 		} break;
 	}
 
-
 #if REPLICATOR_DEBUG
 	size_t differance = m_WritingWalker - serializedMessage;
 	if ( differance != messageSize ) {
@@ -51,6 +54,7 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, uint64_t
 		assert( false );
 	}
 #endif
+
 	m_WritingWalker = nullptr;
 	return serializedMessage;
 }
@@ -72,8 +76,10 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer ) 
 	CopyAndIncrementSource( &deserializedMessage->Replicator_ID, m_ReadingWalker, sizeof( ReplicatorID ) );
 
 	switch ( deserializedMessage->Type ) {
-		
-		// TODODB: Add message specific deserialization here
+		case CONNECTION_ID: {
+			ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( deserializedMessage );
+			CopyAndIncrementSource( &idMessage->ID, m_ReadingWalker, sizeof( ConnectionID ) );
+		} break;
 
 		default: {
 			LogErrorMessage("Failed to find deserialization logic for message of type " + rToString( deserializedMessage->Type) )
@@ -103,8 +109,9 @@ uint64_t TubesMessageReplicator::CalculateMessageSize( const Message& message ) 
 
 	// Add size specific to message
 	switch ( message.Type ) {
-		
-		// TODODB: Add message specific size measurements here
+		case CONNECTION_ID : {
+			messageSize += sizeof( ConnectionID );
+		} break;
 
 		default: {
 			LogErrorMessage( "Failed to find size calculation logic for message of type " + rToString( message.Type ) );
