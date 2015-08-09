@@ -231,6 +231,6 @@ Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const 
 	return toReturn;
 }
 
-const pMap<ConnectionID, Connection*>& ConnectionManager::GetAllConnections() const {
+const pMap<ConnectionID, Connection*>& ConnectionManager::GetVerifiedConnections() const {
 	return m_Connections;
 }

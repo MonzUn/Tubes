@@ -64,7 +64,7 @@ void Tubes::Update() {
 void Tubes::SendToAll( const Message* message ) {
 	if ( m_Initialized ) {
 		if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() ) {
-			const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetAllConnections();
+			const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetVerifiedConnections();
 			for ( auto& idAndConnection : connections ) {
 				Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
 			}
@@ -78,7 +78,7 @@ void Tubes::SendToAll( const Message* message ) {
 
 void Tubes::Receive( tVector<Message*>& outMessages ) {
 	if ( m_Initialized ) {
-		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetAllConnections();
+		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetVerifiedConnections();
 		for ( auto& idAndConnection : connections ) {
 			Message* message;
 			while ( message = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences ) ) {
