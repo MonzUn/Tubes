@@ -9,7 +9,7 @@
 	#define SEND_FLAGS				0
 	#define RECEIVE_FLAGS			0
 #elif PLATFORM == PLATFORM_LINUX
-	#define SENDFLAGS				MSG_NOSIGNAL
+	#define SEND_FLAGS				MSG_NOSIGNAL
 	#define	RECEIVE_FLAGS 0
 #endif
 
