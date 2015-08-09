@@ -32,7 +32,7 @@ void Communication::SendRawData( Connection& connection, const Byte* const data,
 		LogErrorMessage( "Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String( connection.address ) + " )" );
 	}
 
-	int32_t bytesSent = send( connection.socket, data, dataSize, RECEIVE_FLAGS );
+	int32_t bytesSent = send( connection.socket, data, dataSize, SEND_FLAGS );
 	if ( bytesSent != dataSize ) {
 		int error = GET_NETWORK_ERROR;
 		if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_EWOULDBLOCK || error == EPIPE || error == TUBES_ECONNRESET ) {
@@ -43,6 +43,7 @@ void Communication::SendRawData( Connection& connection, const Byte* const data,
 		}
 	}
 }
+
 Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID, MessageReplicator*>& replicators ) {
 	if ( connection.socket == INVALID_SOCKET ) {
 		LogErrorMessage( "Attempted to receive from invalid socket" );
