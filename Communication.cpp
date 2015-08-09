@@ -103,10 +103,10 @@ Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID
 	if ( byteCountReceived == connection.receiveBuffer.ExpectedPayloadBytes ) {
 		// Read the replicator id
 		ReplicatorID replicatorID;
-		memcpy( &replicatorID, connection.receiveBuffer.PayloadData + DataSizes::INT_64_SIZE, sizeof( ReplicatorID ) ); // DataSizes::INT_64_SIZE is for skipping the size variable embeded at the beginning of the buffer
+		memcpy( &replicatorID, connection.receiveBuffer.PayloadData + DataSizes::INT_64_SIZE, sizeof( ReplicatorID ) ); // DataSizes::INT_64_SIZE is for skipping the size variable embedded at the beginning of the buffer
 
 		if ( replicators.find( replicatorID ) == replicators.end() ) { // The requested replicator doesn't exist
-			LogErrorMessage( "Attemted to use replicator with id " + rToString( replicatorID ) + " but no such replicator exists" );
+			LogErrorMessage( "Attempted to use replicator with id " + rToString( replicatorID ) + " but no such replicator exists" );
 			tFree( connection.receiveBuffer.PayloadData );
 			return nullptr;
 		}
