@@ -62,13 +62,17 @@ void Tubes::Update() {
 }
 
 void Tubes::SendToAll( const Message* message ) {
-	if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() ) {
-		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetAllConnections();
-		for ( auto& idAndConnection : connections ) {
-			Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+	if ( m_Initialized ) {
+		if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() ) {
+			const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetAllConnections();
+			for ( auto& idAndConnection : connections ) {
+				Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+			}
+		} else {
+			LogWarningMessage( "Attempted to send message for which no replicator has been registered. Replicator ID = " + rToString( message->Replicator_ID ) );
 		}
 	} else {
-		LogWarningMessage( "Attempted to send message for which no replicator has been registered. Replicator ID = " + rToString( message->Replicator_ID ) );
+		LogWarningMessage( "Attempted to send using an uninitialized instance of Tubes" );
 	}
 }
 
