@@ -17,6 +17,7 @@ public:
 	void		StopAllListeners(); // TODODB: Add option to stop only specific listener
 
 	Connection* GetConnection( ConnectionID connectionID ) const;
+	const pMap<ConnectionID, Connection*>& GetAllConnections() const;
 
 private:
 

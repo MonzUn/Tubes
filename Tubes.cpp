@@ -2,6 +2,7 @@
 #include <utility/PlatformDefinitions.h>
 #include "TubesUtility.h"
 #include "TubesMessageReplicator.h"
+#include "Communication.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
 	#include <utility/RetardedWindowsIncludes.h>
@@ -24,7 +25,6 @@ bool Tubes::Initialize() { // TODODB: Make sure this cannot be called if the isn
 #endif
 
 	if ( m_Initialized ) {
-
 		m_TubesMessageReplicator = pNew( TubesMessageReplicator );
 		m_ReplicatorReferences.emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
 
@@ -58,6 +58,24 @@ void Tubes::Update() {
 		m_ConnectionManager.VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator, m_ReceivedTubesMessages );
 	} else {
 		LogWarningMessage( "Attempted to update uninitialized instance of Tubes" );
+	}
+}
+
+void Tubes::Receive( tVector<Message*>& outMessages ) {
+	if ( m_Initialized ) {
+		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetAllConnections();
+		for ( auto& idAndConnection : connections ) {
+			Message* message;
+			while ( message = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences ) ) {
+				if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID ) {
+					m_ReceivedTubesMessages.push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
+				} else {
+					outMessages.push_back( message );
+				}
+			}
+		}
+	} else {
+		LogWarningMessage( "Attempted to receive using an uninitialized instance of Tubes" );
 	}
 }
 

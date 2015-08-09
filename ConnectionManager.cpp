@@ -230,3 +230,7 @@ Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const 
 
 	return toReturn;
 }
+
+const pMap<ConnectionID, Connection*>& ConnectionManager::GetAllConnections() const {
+	return m_Connections;
+}
