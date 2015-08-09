@@ -10,7 +10,7 @@ struct	TubesMessage;
 
 class ConnectionManager {
 public:
-	void		VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator, const tVector<TubesMessage*> receivedMessages );
+	void		VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator );
 
 	void		RequestConnection( const tString& address, Port port );
 	void		StartListener( Port port );

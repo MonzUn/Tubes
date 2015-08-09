@@ -55,7 +55,7 @@ void Tubes::Shutdown() {
 
 void Tubes::Update() {
 	if ( m_Initialized ) {
-		m_ConnectionManager.VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator, m_ReceivedTubesMessages );
+		m_ConnectionManager.VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator );
 	} else {
 		LogWarningMessage( "Attempted to update uninitialized instance of Tubes" );
 	}

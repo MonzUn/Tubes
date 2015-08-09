@@ -22,10 +22,12 @@
 
 using namespace TubesUtility;
 
-void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator, const tVector<TubesMessage*> receivedMessages ) {
+void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator ) {
 	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i ) {
-		switch ( m_UnverifiedConnections[i].second ) {
+		pMap<ReplicatorID, MessageReplicator*> replicatorMap;		// TODODB: Create overload of Communication::Receive that takes onyl a single replicator
+		replicatorMap.emplace( replicator.GetID(), &replicator );
 
+		switch ( m_UnverifiedConnections[i].second ) {
 			case ConnectionState::NEW_IN : { // TODODB: Implement logic for checking so that the remote client really is a tubes client
 				if ( isHost ) {
 					ConnectionIDMessage idMessage = ConnectionIDMessage( m_NextConnectionID );
@@ -40,16 +42,18 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 				}
 			} break;
 
-			case ConnectionState::NEW_OUT : {
-				if( !isHost ) {
-					for ( int i = 0; i < receivedMessages.size(); ++i ) {
-						if ( receivedMessages[i]->Type == Messages::CONNECTION_ID ) {
-							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( receivedMessages[i] );
+			case ConnectionState::NEW_OUT: {
+				if ( !isHost ) {
+					Message* message;
+					while ( message = Communication::Receive( *m_UnverifiedConnections[i].first, replicatorMap ) ) {
+						if ( message->Type == Messages::CONNECTION_ID ) {
+							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( message );
 
 							// TODODB: Call callback to let the external application know that there is a new connection
 
 							m_Connections.emplace( idMessage->ID, m_UnverifiedConnections[i].first );
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+							break;
 						}
 					}
 				} else {
