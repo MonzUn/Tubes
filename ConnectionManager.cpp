@@ -189,6 +189,8 @@ void ConnectionManager::Listen( Socket listeningsSocket, std::atomic_bool* shoul
 		if ( incomingConnectionSocket != INVALID_SOCKET ) {
 			Connection* connection = pNew( Connection, incomingConnectionSocket, incomingConnectionInfo );
 			m_UnverifiedConnectionsLock.lock();
+			connection->SetBlockingMode( false );
+			connection->SetNoDelay();
 			m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, NEW_IN ) );
 			m_UnverifiedConnectionsLock.unlock();
 		} else {
