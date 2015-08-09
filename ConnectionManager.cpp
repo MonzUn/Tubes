@@ -45,7 +45,7 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 			case ConnectionState::NEW_OUT: {
 				if ( !isHost ) {
 					Message* message;
-					while ( message = Communication::Receive( *m_UnverifiedConnections[i].first, replicatorMap ) ) {
+					while ( ( message = Communication::Receive( *m_UnverifiedConnections[i].first, replicatorMap ) ) != nullptr ) {
 						if ( message->Type == Messages::CONNECTION_ID ) {
 							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( message );
 

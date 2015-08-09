@@ -81,7 +81,7 @@ void Tubes::Receive( tVector<Message*>& outMessages ) {
 		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetVerifiedConnections();
 		for ( auto& idAndConnection : connections ) {
 			Message* message;
-			while ( message = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences ) ) {
+			while ( (message = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences ) ) != nullptr ) {
 				if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID ) {
 					m_ReceivedTubesMessages.push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
 				} else {
