@@ -25,6 +25,7 @@ bool Tubes::Initialize() { // TODODB: Make sure this cannot be called if the isn
 #endif
 
 	if ( m_Initialized ) {
+		m_ConnectionManager = pNew( ConnectionManager );
 		m_TubesMessageReplicator = pNew( TubesMessageReplicator );
 		m_ReplicatorReferences.emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
 
@@ -36,14 +37,21 @@ bool Tubes::Initialize() { // TODODB: Make sure this cannot be called if the isn
 
 void Tubes::Shutdown() {
 	if ( m_Initialized ) {
-		m_ConnectionManager.StopAllListeners();
+		m_ConnectionManager->StopAllListeners();
 
 		#if PLATFORM == PLATFORM_WINDOWS
 			WSACleanup();
 		#endif
 
-		pDelete( m_TubesMessageReplicator );
+		pDelete( m_ConnectionManager );
+
+		pDelete( m_TubesMessageReplicator ); // TODODB: Make a utility cleanup function for this
 		m_ReplicatorReferences.clear();
+
+		for ( int i = 0; i < m_ReceivedTubesMessages.size(); ++i ) {
+			tFree( m_ReceivedTubesMessages[i] );
+		}
+		m_ReceivedTubesMessages.clear();
 
 		LogInfoMessage( "Tubes has been shut down" );
 	} else {
@@ -55,7 +63,7 @@ void Tubes::Shutdown() {
 
 void Tubes::Update() {
 	if ( m_Initialized ) {
-		m_ConnectionManager.VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator );
+		m_ConnectionManager->VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator );
 	} else {
 		LogWarningMessage( "Attempted to update uninitialized instance of Tubes" );
 	}
@@ -64,7 +72,7 @@ void Tubes::Update() {
 void Tubes::SendToAll( const Message* message ) {
 	if ( m_Initialized ) {
 		if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() ) {
-			const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetVerifiedConnections();
+			const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 			for ( auto& idAndConnection : connections ) {
 				Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
 			}
@@ -78,7 +86,7 @@ void Tubes::SendToAll( const Message* message ) {
 
 void Tubes::Receive( tVector<Message*>& outMessages ) {
 	if ( m_Initialized ) {
-		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager.GetVerifiedConnections();
+		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 		for ( auto& idAndConnection : connections ) {
 			Message* message;
 			while ( (message = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences ) ) != nullptr ) {
@@ -96,7 +104,7 @@ void Tubes::Receive( tVector<Message*>& outMessages ) {
 
 void Tubes::RequestConnection( const tString& address, uint16_t port ) {
 	if ( m_Initialized ) {
-		m_ConnectionManager.RequestConnection( address, port );
+		m_ConnectionManager->RequestConnection( address, port );
 	} else {
 		LogWarningMessage( "Attempted to request a connection although the Tubes instance is uninitialized" );
 	}
@@ -104,7 +112,7 @@ void Tubes::RequestConnection( const tString& address, uint16_t port ) {
 
 void Tubes::StartListener( uint16_t port ) {
 	if ( m_Initialized ) {
-		m_ConnectionManager.StartListener( port );
+		m_ConnectionManager->StartListener( port );
 	} else {
 		LogWarningMessage( "Attempted to start listening on port " + rToString( port ) + " although the tubes instance is uninitialized" );
 	}
@@ -112,7 +120,7 @@ void Tubes::StartListener( uint16_t port ) {
 
 void Tubes::StopAllListeners() {
 	if ( m_Initialized ) {
-		m_ConnectionManager.StopAllListeners();
+		m_ConnectionManager->StopAllListeners();
 	} else {
 		LogWarningMessage( "Attempted to stop all listeners although the tubes instance is uninitialized" );
 	}

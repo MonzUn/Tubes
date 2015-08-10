@@ -5,11 +5,12 @@
 #include "TubesTypes.h"
 #include "Connection.h"
 
-class	TubesMessageReplicator;
-struct	TubesMessage;
+class TubesMessageReplicator;
 
 class ConnectionManager {
 public:
+	~ConnectionManager();
+
 	void		VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator );
 
 	void		RequestConnection( const tString& address, Port port );

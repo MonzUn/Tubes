@@ -6,6 +6,7 @@
 class	MessageReplicator;
 class	TubesMessageReplicator;
 struct	Message;
+struct	TubesMessage;
 
 class Tubes { // TODODB: Create interface
 public:
@@ -25,7 +26,7 @@ public:
 	TUBES_API void SetHostFlag( bool isHost );
 
 private:
-	ConnectionManager m_ConnectionManager;
+	ConnectionManager*						m_ConnectionManager; // TODODB: WHY CAN'T THE LINKER FIND THE DTOR DEFINITION IF THIS IS PLACED ON THE STACK!?!?
 
 	pMap<ReplicatorID, MessageReplicator*>	m_ReplicatorReferences;
 	TubesMessageReplicator*					m_TubesMessageReplicator;

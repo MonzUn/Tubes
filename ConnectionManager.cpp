@@ -22,6 +22,18 @@
 
 using namespace TubesUtility;
 
+ConnectionManager::~ConnectionManager() {
+	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i ) {
+		pDelete( m_UnverifiedConnections[i].first );
+	}
+	m_UnverifiedConnections.clear();
+
+	for ( auto& idAndConnection : m_Connections ) {
+		pDelete( idAndConnection.second );
+	}
+	m_Connections.clear();
+}
+
 void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator ) {
 	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i ) {
 		pMap<ReplicatorID, MessageReplicator*> replicatorMap;		// TODODB: Create overload of Communication::Receive that takes onyl a single replicator
