@@ -53,6 +53,7 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 
 							m_Connections.emplace( idMessage->ID, m_UnverifiedConnections[i].first );
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+							tFree( message );
 							break;
 						}
 					}
