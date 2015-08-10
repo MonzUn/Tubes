@@ -21,6 +21,8 @@ public:
 	TUBES_API void StartListener( uint16_t port );
 	TUBES_API void StopAllListeners();
 
+	TUBES_API void RegisterReplicator( MessageReplicator* replicator );
+
 	TUBES_API bool GetHostFlag() const;
 
 	TUBES_API void SetHostFlag( bool isHost );

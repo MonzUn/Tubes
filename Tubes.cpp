@@ -126,6 +126,10 @@ void Tubes::StopAllListeners() {
 	}
 }
 
+void Tubes::RegisterReplicator( MessageReplicator* replicator ) { // TODODB: Add unregistration function
+	m_ReplicatorReferences.emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
+}
+
 bool Tubes::GetHostFlag() const {
 	return m_HostFlag;
 }
