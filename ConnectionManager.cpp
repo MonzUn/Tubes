@@ -65,7 +65,6 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 			default: {
 				assert( false ); // Connection is in an unhandled connection state
 			} break;
-				
 		}
 	}
 }
