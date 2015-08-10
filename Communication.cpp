@@ -22,9 +22,11 @@ void Communication::SendTubesMessage( Connection& connection, const Message& mes
 	if ( serializedMessage == nullptr ) {
 		LogWarningMessage( "Failed to send message of type" ); // TODODB: Print message type here when conversion from tString to rString bullshittery is resolved
 		tFree( serializedMessage );
+		return;
 	}
 	
 	SendRawData( connection, serializedMessage, static_cast<int32_t>( messageSize ) );
+	tFree( serializedMessage );
 }
 
 void Communication::SendRawData( Connection& connection, const Byte* const data, int32_t dataSize ) {
