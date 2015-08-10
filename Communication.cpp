@@ -54,6 +54,7 @@ Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID
 
 	int32_t byteCountReceived;
 	if ( connection.receiveBuffer.ExpectedHeaderBytes > 0 ) { // If we are waiting for header data
+
 		byteCountReceived = recv( connection.socket, connection.receiveBuffer.Walker, connection.receiveBuffer.ExpectedHeaderBytes, RECEIVE_FLAGS ); // Attempt to receive header
 
 		if ( byteCountReceived == -1 ) { // No data was ready to be received or there was an error
@@ -116,7 +117,10 @@ Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID
 
 		Message* message = replicators.at( replicatorID )->DeserializeMessage( connection.receiveBuffer.PayloadData );
 		tFree( connection.receiveBuffer.PayloadData );
-		connection.receiveBuffer = ReceiveBuffer();
+		connection.receiveBuffer.ExpectedHeaderBytes	= DataSizes::INT_64_SIZE; // TODODB: Use default defines for these values
+		connection.receiveBuffer.ExpectedPayloadBytes	= NOT_EXPECTING_PAYLOAD;
+		connection.receiveBuffer.PayloadData			= nullptr;
+		connection.receiveBuffer.Walker					= reinterpret_cast<Byte*>( &connection.receiveBuffer.ExpectedPayloadBytes );
 
 		return message;
 	} else { // Only part of the payload was received. Account for this and attempt to receive the rest in an upcoming call of this function
