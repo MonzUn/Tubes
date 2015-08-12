@@ -7,7 +7,7 @@
 #elif PLATFORM == PLATFORM_LINUX
 #include <string.h> // Needed for strerror
 #endif
-#include "TubesTypes.h"
+#include "InternalTubesTypes.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
 #define GET_NETWORK_ERROR WSAGetLastError()

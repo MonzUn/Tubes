@@ -3,6 +3,7 @@
 #include <mutex>
 #include <atomic>
 #include "TubesTypes.h"
+#include "InternalTubesTypes.h"
 #include "Connection.h"
 
 class TubesMessageReplicator;

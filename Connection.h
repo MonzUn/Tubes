@@ -1,6 +1,6 @@
 #pragma once
 #include <memory/Alloc.h>
-#include "TubesTypes.h"
+#include "InternalTubesTypes.h"
 #if PLATFORM == PLATFORM_WINDOWS
 #include <utility/RetardedWindowsIncludes.h>
 #else

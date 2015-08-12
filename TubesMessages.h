@@ -1,6 +1,6 @@
 #pragma once
 #include "TubesMessageBase.h"
-#include "TubesTypes.h"
+#include "InternalTubesTypes.h"
 
 namespace Messages {
 	enum MessageType : MESSAGE_TYPE_ENUM_UNDELYING_TYPE {
