@@ -2,6 +2,7 @@
 #include <messaging/MessagingTypes.h>
 #include "TubesLibraryDefine.h"
 #include "ConnectionManager.h"
+#include "TubesTypes.h" // Exposes the relevant types to the external application
 
 class	MessageReplicator;
 class	TubesMessageReplicator;
