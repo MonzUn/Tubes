@@ -3,6 +3,7 @@
 #include "TubesUtility.h"
 #include "TubesMessageReplicator.h"
 #include "Communication.h"
+#include "ConnectionManager.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
 	#include <utility/RetardedWindowsIncludes.h>
