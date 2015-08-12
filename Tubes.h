@@ -23,6 +23,8 @@ public:
 	TUBES_API void StopAllListeners();
 
 	TUBES_API void RegisterReplicator( MessageReplicator* replicator );
+	TUBES_API ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction );
+	TUBES_API bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
 
 	TUBES_API bool GetHostFlag() const;
 

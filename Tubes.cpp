@@ -131,6 +131,14 @@ void Tubes::RegisterReplicator( MessageReplicator* replicator ) { // TODODB: Add
 	m_ReplicatorReferences.emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
 }
 
+ConnectionCallbackHandle Tubes::RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction ) {
+	return m_ConnectionManager->RegisterConnectionCallback( callbackFunction );
+}
+
+bool Tubes::UnregisterConnectionCallback( ConnectionCallbackHandle handle ) {
+	return m_ConnectionManager->UnregisterConnectionCallback( handle );
+}
+
 bool Tubes::GetHostFlag() const {
 	return m_HostFlag;
 }

@@ -49,6 +49,7 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 
 					m_Connections.emplace( m_NextConnectionID++, m_UnverifiedConnections[i].first );
 					m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+					m_ConnectionCallbacks.TriggerCallbacks( idMessage.ID );
 				} else {
 					assert( false ); // A client shouldn't receive incoming connections
 				}
@@ -65,6 +66,7 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 
 							m_Connections.emplace( idMessage->ID, m_UnverifiedConnections[i].first );
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+							m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
 							tFree( message );
 							break;
 						}
@@ -140,6 +142,14 @@ void ConnectionManager::StopAllListeners() {
 	}
 
 	m_ListenerMap.clear();
+}
+
+ConnectionCallbackHandle ConnectionManager::RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction ) {
+	return m_ConnectionCallbacks.RegisterCallback( callbackFunction );
+}
+
+bool ConnectionManager::UnregisterConnectionCallback( ConnectionCallbackHandle handle ) {
+	return m_ConnectionCallbacks.UnregisterCallback( handle );
 }
 
 void ConnectionManager::Connect( const tString& address, Port port ) { // TODODB: Make this run on a separate thread to avoid blocking the main thread
