@@ -23,7 +23,7 @@
 #define LogAPIErrorMessage( outputMessage )	{ int __errorCode = GET_NETWORK_ERROR; Logger::Log( tString( outputMessage " - Error: " ) + TubesUtility::GetErrorName( __errorCode ), TubesUtility::LOGGER_NAME , LogSeverity::ERROR_MSG ); } // TODODB: Go through the code and see where this output type is applicable
 
 #define LOCALHOST_IP "127.0.0.1"
-#define NETWORK_DEBUG 1
+#define TUBES_DEBUG 1
 #define NOT_EXPECTING_PAYLOAD -1
 
 namespace TubesUtility {
