@@ -15,22 +15,26 @@
 #endif
 
 bool Tubes::Initialize() { // TODODB: Make sure this cannot be called if the isntance is already initialized
-#if PLATFORM == PLATFORM_WINDOWS
-	WSADATA wsaData;
-	m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
 	if ( !m_Initialized ) {
-			LogErrorMessage( "Failed to initialize Tubes since WSAStartup failed" );	
-	}
+#if PLATFORM == PLATFORM_WINDOWS
+		WSADATA wsaData;
+		m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
+		if ( !m_Initialized ) {
+			LogErrorMessage( "Failed to initialize Tubes since WSAStartup failed" );
+		}
 #else 
-	m_Initialized = true;
+		m_Initialized = true;
 #endif
 
-	if ( m_Initialized ) {
-		m_ConnectionManager = pNew( ConnectionManager );
-		m_TubesMessageReplicator = pNew( TubesMessageReplicator );
-		m_ReplicatorReferences.emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
+		if ( m_Initialized ) {
+			m_ConnectionManager = pNew( ConnectionManager );
+			m_TubesMessageReplicator = pNew( TubesMessageReplicator );
+			m_ReplicatorReferences.emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
 
-		LogInfoMessage( "Tubes was successfully initialized" );
+			LogInfoMessage( "Tubes was successfully initialized" );
+		}
+	} else {
+		LogWarningMessage( "Attempted to initialize an already initialized instance of Tubes" );
 	}
 
 	return m_Initialized;
