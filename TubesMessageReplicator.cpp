@@ -6,9 +6,9 @@ using namespace DataSizes;
 using namespace SerializationUtility;
 using namespace Messages;
 
-Byte* TubesMessageReplicator::SerializeMessage( const Message* message, uint64_t* outMessageSize, Byte* optionalWritingBuffer ) {
+Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageSize* outMessageSize, Byte* optionalWritingBuffer ) {
 	// Attemt to get the message size
-	uint64_t messageSize = CalculateMessageSize( *message );
+	MessageSize messageSize = CalculateMessageSize( *message );
 	if ( messageSize == 0 ) {
 		return nullptr;
 	}
@@ -23,7 +23,7 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, uint64_t
 	m_WritingWalker = serializedMessage;
 
 	// Write the message size
-	WriteUint64( messageSize );
+	CopyAndIncrementDestination( m_WritingWalker, &messageSize, sizeof( MessageSize ) );
 
 	// Write the replicator ID
 	SerializationUtility::CopyAndIncrementDestination( m_WritingWalker, &message->Replicator_ID, sizeof( ReplicatorID ) );
@@ -48,7 +48,7 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, uint64_t
 	}
 
 #if REPLICATOR_DEBUG
-	size_t differance = m_WritingWalker - serializedMessage;
+	uint64_t differance = m_WritingWalker - serializedMessage;
 	if ( differance != messageSize ) {
 		LogErrorMessage( "SerializeMessage didn't write the expected amount of bytes" );
 		assert( false );
@@ -63,8 +63,8 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer ) 
 	m_ReadingWalker = buffer;
 
 	// Read the message size
-	uint64_t messageSize;
-	ReadUint64( messageSize );
+	MessageSize messageSize;
+	CopyAndIncrementSource( &messageSize, m_ReadingWalker, sizeof( MessageSize ) );
 
 	// Allocate a writing buffer that will become a message
 	Message* deserializedMessage = reinterpret_cast<Message*>( tAlloc( Byte*, messageSize ) );
@@ -88,7 +88,7 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer ) 
 	}
 
 #if REPLICATOR_DEBUG
-	size_t differance = m_ReadingWalker - buffer;
+	uint64_t differance = m_ReadingWalker - buffer;
 	if ( differance != messageSize ) {
 		LogErrorMessage( "DeserializeMessage didn't read the expected amount of bytes");
 		assert( false );
@@ -99,11 +99,11 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer ) 
 	return deserializedMessage;
 }
 
-uint64_t TubesMessageReplicator::CalculateMessageSize( const Message& message ) const {
-	uint64_t messageSize = 0;
+int32_t TubesMessageReplicator::CalculateMessageSize( const Message& message ) const {
+	int32_t messageSize = 0;
 
 	// Add the size of the variables size, type and replicator ID
-	messageSize += INT_64_SIZE;
+	messageSize += sizeof( MessageSize );
 	messageSize += sizeof( ReplicatorID );
 	messageSize += sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE );
 

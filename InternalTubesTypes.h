@@ -6,6 +6,7 @@
 #include <utility/Byte.h>
 #include <utility/DataSizes.h>
 #include <memory/Alloc.h>
+#include <messaging/MessagingTypes.h>
 #include "TubesErrors.h"
 
 #if PLATFORM != PLATFORM_WINDOWS // winsock already defines this on windows
@@ -47,8 +48,8 @@ struct Listener {
 struct ReceiveBuffer {
 	ReceiveBuffer();
 
-	int16_t ExpectedHeaderBytes;	// How many more bytes of header we expect for the current packet
-	uint64_t ExpectedPayloadBytes;	// How many more bytes of payload we expect for the current packet  // TODODB: This variable should be int32_t since the recv can't take more in a single call
-	Byte*	PayloadData;			// Dynamic buffer for packet payload
-	Byte*	Walker;					// Pointer to where the next recv should write to
+	int16_t		ExpectedHeaderBytes;	// How many more bytes of header we expect for the current packet
+	MessageSize ExpectedPayloadBytes;	// How many more bytes of payload we expect for the current packet
+	Byte*		PayloadData;			// Dynamic buffer for packet payload
+	Byte*		Walker;					// Pointer to where the next recv should write to
 };

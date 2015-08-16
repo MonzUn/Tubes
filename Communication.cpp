@@ -16,7 +16,7 @@
 using namespace TubesUtility;
 
 void Communication::SendTubesMessage( Connection& connection, const Message& message, MessageReplicator& replicator ) {
-	uint64_t messageSize;
+	int32_t messageSize;
 	Byte* serializedMessage = replicator.SerializeMessage( &message, &messageSize );
 
 	if ( serializedMessage == nullptr ) {
@@ -25,7 +25,7 @@ void Communication::SendTubesMessage( Connection& connection, const Message& mes
 		return;
 	}
 	
-	SendRawData( connection, serializedMessage, static_cast<int32_t>( messageSize ) );
+	SendRawData( connection, serializedMessage, messageSize );
 	tFree( serializedMessage );
 }
 
@@ -77,8 +77,8 @@ Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID
 			connection.receiveBuffer.Walker = connection.receiveBuffer.PayloadData; // Walker now points to the new buffer since that is where we will want to write on the next recv
 
 			// Write down the size at the beggining so the serialization is done preperly
-			SerializationUtility::CopyAndIncrementDestination( connection.receiveBuffer.Walker, &connection.receiveBuffer.ExpectedPayloadBytes, DataSizes::INT_64_SIZE );
-			connection.receiveBuffer.ExpectedPayloadBytes -= DataSizes::INT_64_SIZE; // We have already received the size variable
+			SerializationUtility::CopyAndIncrementDestination( connection.receiveBuffer.Walker, &connection.receiveBuffer.ExpectedPayloadBytes, sizeof( MessageSize ) );
+			connection.receiveBuffer.ExpectedPayloadBytes -= sizeof( MessageSize ); // We have already received the size variable
 
 			connection.receiveBuffer.ExpectedHeaderBytes = 0; // Reset the expected header bytes variable so it indicates that payload data is being received now
 		} else { // Only a part of the header was received. Account for this and handle it in an upcoming call of this function
@@ -107,7 +107,7 @@ Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID
 	if ( byteCountReceived == connection.receiveBuffer.ExpectedPayloadBytes ) {
 		// Read the replicator id
 		ReplicatorID replicatorID;
-		memcpy( &replicatorID, connection.receiveBuffer.PayloadData + DataSizes::INT_64_SIZE, sizeof( ReplicatorID ) ); // DataSizes::INT_64_SIZE is for skipping the size variable embedded at the beginning of the buffer
+		memcpy( &replicatorID, connection.receiveBuffer.PayloadData + sizeof( MessageSize ), sizeof( ReplicatorID ) ); // sizeof( MessageSize ) is for skipping the size variable embedded at the beginning of the buffer
 
 		if ( replicators.find( replicatorID ) == replicators.end() ) { // The requested replicator doesn't exist
 			LogErrorMessage( "Attempted to use replicator with id " + rToString( replicatorID ) + " but no such replicator exists" );
@@ -117,7 +117,7 @@ Message* Communication::Receive( Connection& connection, const pMap<ReplicatorID
 
 		Message* message = replicators.at( replicatorID )->DeserializeMessage( connection.receiveBuffer.PayloadData );
 		tFree( connection.receiveBuffer.PayloadData );
-		connection.receiveBuffer.ExpectedHeaderBytes	= DataSizes::INT_64_SIZE; // TODODB: Use default defines for these values
+		connection.receiveBuffer.ExpectedHeaderBytes	= sizeof( MessageSize ); // TODODB: Use default defines for these values
 		connection.receiveBuffer.ExpectedPayloadBytes	= NOT_EXPECTING_PAYLOAD;
 		connection.receiveBuffer.PayloadData			= nullptr;
 		connection.receiveBuffer.Walker					= reinterpret_cast<Byte*>( &connection.receiveBuffer.ExpectedPayloadBytes );
