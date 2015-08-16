@@ -16,7 +16,7 @@ public:
 	TUBES_API void Update();
 
 	TUBES_API void SendToAll( const Message* message );
-	TUBES_API void Receive( tVector<Message*>& outMessages );
+	TUBES_API void Receive( tVector<Message*>& outMessages, tVector<ConnectionID>* outSenderIDs = nullptr );
 
 	TUBES_API void RequestConnection( const tString& address, uint16_t port ); // TODODB: Can we use tubes specific typdefes in this interface (Want to use Port here)
 	TUBES_API void StartListener( uint16_t port );

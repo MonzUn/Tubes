@@ -1,4 +1,5 @@
 #include "TubesMessageReplicator.h"
+#include "TubesTypes.h"
 #include "TubesUtility.h"
 #include "TubesMessages.h"
 

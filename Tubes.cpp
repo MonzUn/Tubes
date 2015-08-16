@@ -85,7 +85,7 @@ void Tubes::SendToAll( const Message* message ) {
 	}
 }
 
-void Tubes::Receive( tVector<Message*>& outMessages ) {
+void Tubes::Receive( tVector<Message*>& outMessages, tVector<ConnectionID>* outSenderIDs ) {
 	if ( m_Initialized ) {
 		const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 		for ( auto& idAndConnection : connections ) {
@@ -95,6 +95,9 @@ void Tubes::Receive( tVector<Message*>& outMessages ) {
 					m_ReceivedTubesMessages.push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
 				} else {
 					outMessages.push_back( message );
+					if ( outSenderIDs ) {
+						outSenderIDs->push_back( idAndConnection.first );
+					}
 				}
 			}
 		}
