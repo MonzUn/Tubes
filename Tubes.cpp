@@ -66,7 +66,7 @@ void Tubes::Update() {
 	if ( m_Initialized ) {
 		m_ConnectionManager->VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator );
 	} else {
-		LogWarningMessage( "Attempted to update uninitialized instance of Tubes" );
+		LogErrorMessage( "Attempted to update uninitialized instance of Tubes" );
 	}
 }
 
@@ -78,10 +78,10 @@ void Tubes::SendToAll( const Message* message ) {
 				Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
 			}
 		} else {
-			LogWarningMessage( "Attempted to send message for which no replicator has been registered. Replicator ID = " + rToString( message->Replicator_ID ) );
+			LogErrorMessage( "Attempted to send message for which no replicator has been registered. Replicator ID = " + rToString( message->Replicator_ID ) );
 		}
 	} else {
-		LogWarningMessage( "Attempted to send using an uninitialized instance of Tubes" );
+		LogErrorMessage( "Attempted to send using an uninitialized instance of Tubes" );
 	}
 }
 
@@ -102,7 +102,7 @@ void Tubes::Receive( tVector<Message*>& outMessages, tVector<ConnectionID>* outS
 			}
 		}
 	} else {
-		LogWarningMessage( "Attempted to receive using an uninitialized instance of Tubes" );
+		LogErrorMessage( "Attempted to receive using an uninitialized instance of Tubes" );
 	}
 }
 
@@ -110,7 +110,7 @@ void Tubes::RequestConnection( const tString& address, uint16_t port ) {
 	if ( m_Initialized ) {
 		m_ConnectionManager->RequestConnection( address, port );
 	} else {
-		LogWarningMessage( "Attempted to request a connection although the Tubes instance is uninitialized" );
+		LogErrorMessage( "Attempted to request a connection although the Tubes instance is uninitialized" );
 	}
 }
 
@@ -118,7 +118,7 @@ void Tubes::StartListener( uint16_t port ) {
 	if ( m_Initialized ) {
 		m_ConnectionManager->StartListener( port );
 	} else {
-		LogWarningMessage( "Attempted to start listening on port " + rToString( port ) + " although the tubes instance is uninitialized" );
+		LogErrorMessage( "Attempted to start listening on port " + rToString( port ) + " although the tubes instance is uninitialized" );
 	}
 }
 
@@ -126,7 +126,7 @@ void Tubes::StopAllListeners() {
 	if ( m_Initialized ) {
 		m_ConnectionManager->StopAllListeners();
 	} else {
-		LogWarningMessage( "Attempted to stop all listeners although the tubes instance is uninitialized" );
+		LogErrorMessage( "Attempted to stop all listeners although the tubes instance is uninitialized" );
 	}
 }
 
