@@ -70,12 +70,46 @@ void Tubes::Update() {
 	}
 }
 
-void Tubes::SendToAll( const Message* message ) {
+void Tubes::SendToConnection( const Message* message, ConnectionID destinationConnectionID ) {
+	if ( m_Initialized ) {
+		Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
+		if ( connection != nullptr ) {
+			if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() ) {
+				Communication::SendTubesMessage( *connection, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+			} else {
+				LogErrorMessage( "Attempted to send message for which no replicator has been registered. Replicator ID = " + rToString( message->Replicator_ID ) );
+			}
+		} else {
+			LogErrorMessage( "Failed to find requested connection while sending (Requested ID = " + rToString( destinationConnectionID ) + " )" );
+		}
+	} else {
+		LogErrorMessage( "Attempted to send using an uninitialized instance of Tubes" );
+	}
+}
+
+void Tubes::SendToAll( const Message* message, ConnectionID exception ) {
 	if ( m_Initialized ) {
 		if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() ) {
 			const pMap<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
+
+#if TUBES_DEBUG == 1
+			if ( exception != INVALID_CONNECTION_ID ) {
+				bool exceptionExists = false;
+				for ( auto& idAndConnection : connections ) {
+					if ( idAndConnection.first == exception ) {
+						exceptionExists = true;
+					}
+				}
+
+				if ( !exceptionExists ) {
+					LogWarningMessage( "The excepted connectionID supplied to SendToAll does not exist" );
+				}
+			}
+#endif
 			for ( auto& idAndConnection : connections ) {
-				Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+				if ( idAndConnection.first != exception ) {
+					Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+				}
 			}
 		} else {
 			LogErrorMessage( "Attempted to send message for which no replicator has been registered. Replicator ID = " + rToString( message->Replicator_ID ) );
