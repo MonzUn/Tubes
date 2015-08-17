@@ -31,7 +31,7 @@ Address TubesUtility::IPv4StringToAddress( const tString& addressString ) {
 	uint32_t adressParts[4];
 	int startSearchPos = 0;
 	for ( int i = 0; i < 4; ++i ) {
-		int stopSearchPos = static_cast< int >( addressString.find( '.', startSearchPos ) );
+		int stopSearchPos = static_cast<int>( addressString.find( '.', startSearchPos ) );
 		rString currentAdressPart = addressString.substr( startSearchPos, stopSearchPos - startSearchPos );
 		startSearchPos = stopSearchPos + 1; // +1 to not find same delimiter on next search
 		adressParts[i] = static_cast<unsigned int>( std::stoul( currentAdressPart.c_str() ) );

@@ -36,20 +36,23 @@ ConnectionManager::~ConnectionManager() {
 
 void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator ) {
 	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i ) {
-		pMap<ReplicatorID, MessageReplicator*> replicatorMap;		// TODODB: Create overload of Communication::Receive that takes onyl a single replicator
+		pMap<ReplicatorID, MessageReplicator*> replicatorMap; // TODODB: Create overload of Communication::Receive that takes only a single replicator
 		replicatorMap.emplace( replicator.GetID(), &replicator );
 
 		switch ( m_UnverifiedConnections[i].second ) {
 			case ConnectionState::NEW_IN : { // TODODB: Implement logic for checking so that the remote client really is a tubes client
 				if ( isHost ) {
-					ConnectionIDMessage idMessage = ConnectionIDMessage( m_NextConnectionID );
+					ConnectionID connectionID = m_NextConnectionID++;
+					ConnectionIDMessage idMessage = ConnectionIDMessage( connectionID );
 					Communication::SendTubesMessage( *m_UnverifiedConnections[i].first, idMessage, replicator );
 
 					// TODODB: Call callback to let the external application know that there is a new connection
 
-					m_Connections.emplace( m_NextConnectionID++, m_UnverifiedConnections[i].first );
+					m_Connections.emplace( connectionID, m_UnverifiedConnections[i].first );
 					m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
 					m_ConnectionCallbacks.TriggerCallbacks( idMessage.ID );
+
+					LogInfoMessage( "An incoming connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( connectionID )->address ) + " was accepted" );
 				} else {
 					assert( false ); // A client shouldn't receive incoming connections
 				}
@@ -67,6 +70,9 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 							m_Connections.emplace( idMessage->ID, m_UnverifiedConnections[i].first );
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
 							m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
+
+							LogInfoMessage( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->address ) + " was accepted" );
+
 							tFree( message );
 							break;
 						}
