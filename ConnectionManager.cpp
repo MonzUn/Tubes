@@ -10,6 +10,7 @@
 
 #if PLATFORM != PLATFORM_WINDOWS
 #include <arpa/inet.h>
+#include <unistd.h>
 #endif
 
 #if PLATFORM == PLATFORM_WINDOWS
