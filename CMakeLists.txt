@@ -25,6 +25,9 @@ add_library(Tubes SHARED ${TubesSources})
 target_link_libraries(Tubes Utility)
 target_link_libraries(Tubes Memory)
 target_link_libraries(Tubes Messaging)
+if (WIN32)
+	target_link_libraries(Tubes ws2_32)
+endif(WIN32)
 
 SET_TARGET_PROPERTIES(Tubes PROPERTIES LINKER_LANGUAGE CXX) #TODODB: Find out why we need to set this or remove it when we don't need to set it anymore (Cmake should figure it out from the source files)
 
