@@ -1,28 +1,18 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Windows thumbnails
+Thumbs.db
 
-# Precompiled Headers
-*.gch
-*.pch
+# Visual Studio
+*.vcxproj*
+*.sln
+project/.vs/
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# CMake
+project/*.dir
+project/CMakeFiles/
+project/CMakeCache.txt
+project/cmake_install.cmake
+project/x86
+project/x64
 
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# Generated
+output/
