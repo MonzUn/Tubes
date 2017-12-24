@@ -1,5 +1,0 @@
-# MUtility include
-set(MUtilityIncludeCopyPath "E:/workdir/MUtility/source/interface")
-
-# MUtility lib
-set(MUtilityLibCopyPath "E:/workdir/MUtility/output/Debug")

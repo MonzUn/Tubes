@@ -13,6 +13,7 @@ project/CMakeCache.txt
 project/cmake_install.cmake
 project/x86
 project/x64
+project/CMakeLocalDependenciesPaths.txt
 
 # Generated
 output/

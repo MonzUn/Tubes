@@ -20,32 +20,34 @@ endif(MSVC)
 file(RELATIVE_PATH IncludeDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/include)
 get_filename_component(IncludeDirectoryAbsolute ${IncludeDirectoryRelative} ABSOLUTE)
 
-# Library directory
-file(RELATIVE_PATH LibraryDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/lib/x64)
-get_filename_component(LibraryDirectoryAbsolute ${LibraryDirectoryRelative} ABSOLUTE)
+# Debug library directory
+file(RELATIVE_PATH DebugLibraryDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/lib/debug/x64)
+get_filename_component(DebugLibraryDirectoryAbsolute ${DebugLibraryDirectoryRelative} ABSOLUTE)
+
+# Release library directory
+file(RELATIVE_PATH ReleaseLibraryDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/lib/release/x64)
+get_filename_component(ReleaseLibraryDirectoryAbsolute ${ReleaseLibraryDirectoryRelative} ABSOLUTE)
 
 # Set output directory
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ProjectRoot}/output/)
-
-# Ensure build type set
-if (NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Debug)
-endif()
 
 # Find MUtility
 find_path(MUtilityInclude MUtility/MUtilityByte.h PATHS ${IncludeDirectoryAbsolute})
 set(MUtilityIncludes ${MUtilityInclude}/MUtility)
 
-set(MUtilityLibraryDirectoryAbsolute "${LibraryDirectoryAbsolute}/MUtility")
-find_library(MUtilityLibrary
+set(MUtilityDebugLibraryDirectoryAbsolute "${DebugLibraryDirectoryAbsolute}/MUtility")
+find_library(MUtilityDebugLibrary
 	NAMES MUtility
-	PATHS ${MUtilityLibraryDirectoryAbsolute})
-set(MUtilityLibraries ${MUtilityLibrary})
+	PATHS ${MUtilityDebugLibraryDirectoryAbsolute})
+set(MUtilityDebugLibraries ${MUtilityDebugLibrary})
 
-# Set lib and include directories
-link_directories(
-	${MUtilityLibraries}
-)
+set(MUtilityReleaseLibraryDirectoryAbsolute "${ReleaseLibraryDirectoryAbsolute}/MUtility")
+find_library(MUtilityReleaseLibrary
+	NAMES MUtility
+	PATHS ${MUtilityReleaseLibraryDirectoryAbsolute})
+set(MUtilityReleaseLibraries ${MUtilityReleaseLibrary})
+
+# Set include directories
 
 include_directories(
 	${MUtilityIncludes}
@@ -65,6 +67,14 @@ ADD_LIBRARY( ${CMAKE_PROJECT_NAME} STATIC
 # Make sure that the linker language gets set to C++
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
+# Link debug libraries to the executable
+target_link_libraries(${CMAKE_PROJECT_NAME} debug ${MUtilityDebugLibraries}
+)
+
+# Link release libraries to the executable
+target_link_libraries(${CMAKE_PROJECT_NAME} optimized ${MUtilityReleaseLibraries}
+)
+
 # Get local(non versioned) paths to dependencies
 include("CMakeLocalDependenciesPaths.txt" OPTIONAL)
 
@@ -77,13 +87,21 @@ if(MUtilityIncludeCopyPath)
         ${MUtilityIncludes})
 endif(MUtilityIncludeCopyPath)
 
-if(MUtilityLibCopyPath)
+if(MUtilityDebugLibCopyPath)
 	add_custom_command(TARGET ${CMAKE_PROJECT_NAME}
 	PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${MUtilityLibCopyPath}
-        ${MUtilityLibraryDirectoryAbsolute})
-endif(MUtilityLibCopyPath)
+        ${MUtilityDebugLibCopyPath}
+        ${MUtilityDebugLibraryDirectoryAbsolute})
+endif(MUtilityDebugLibCopyPath)
+
+if(MUtilityReleaseLibCopyPath)
+	add_custom_command(TARGET ${CMAKE_PROJECT_NAME}
+	PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${MUtilityReleaseLibCopyPath}
+        ${MUtilityReleaseLibraryDirectoryAbsolute})
+endif(MUtilityReleaseLibCopyPath)
 
 # --- DEBUG COPY PASTE ---
 #message("|||--- TEST ---||| ${var}")
