@@ -4,7 +4,7 @@
 #include "SimulationMessage.h"
 #include <MUtilityThreading.h>
 
-using namespace ThreadingUtility;
+using namespace MutilityThreading;
 
 MessageManager::MessageManager() {}
 
