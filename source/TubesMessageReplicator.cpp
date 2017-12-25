@@ -2,12 +2,15 @@
 #include "TubesTypes.h"
 #include "TubesUtility.h"
 #include "TubesMessages.h"
+#include <MUtilityLog.h>
 #include <MUtilitySerialization.h>
 #include <cassert>
 
 using namespace DataSizes;
 using namespace MUtilitySerialization;
 using namespace TubesMessages;
+
+#define TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR "TubesMessageReplicator"
 
 Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageSize* outMessageSize, Byte* optionalWritingBuffer )
 {
@@ -45,7 +48,7 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageS
 
 		default:
 		{
-			LogErrorMessage( "Failed to find serialization logic for message of type " + rToString( message->Type ) );
+			MLOG_ERROR( "Failed to find serialization logic for message of type " << message->Type, TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 			if ( optionalWritingBuffer == nullptr ) // Only free the memory buffer if it wasn't supplied as a parameter
 				free( serializedMessage );
 
@@ -57,7 +60,7 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageS
 	uint64_t differance = m_WritingWalker - serializedMessage;
 	if ( differance != messageSize )
 	{
-		LogErrorMessage( "SerializeMessage didn't write the expected amount of bytes" );
+		MLOG_ERROR( "SerializeMessage didn't write the expected amount of bytes", TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 		assert( false );
 	}
 #endif
@@ -94,7 +97,7 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer )
 
 		default:
 		{
-			LogErrorMessage( "Failed to find deserialization logic for message of type " + rToString(deserializedMessage->Type) );
+			MLOG_ERROR( "Failed to find deserialization logic for message of type " << deserializedMessage->Type, TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 			deserializedMessage = nullptr;
 		} break;
 	}
@@ -103,7 +106,7 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer )
 	uint64_t differance = m_ReadingWalker - buffer;
 	if ( differance != messageSize )
 	{
-		LogErrorMessage( "DeserializeMessage didn't read the expected amount of bytes");
+		MLOG_ERROR( "DeserializeMessage didn't read the expected amount of bytes", TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 		assert( false );
 	}
 #endif
@@ -132,7 +135,7 @@ int32_t TubesMessageReplicator::CalculateMessageSize( const Message& message ) c
 
 		default:
 		{
-			LogErrorMessage( "Failed to find size calculation logic for message of type " + rToString( message.Type ) );
+			MLOG_ERROR( "Failed to find size calculation logic for message of type " << message.Type, TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 			messageSize = 0;
 		} break;
 	}

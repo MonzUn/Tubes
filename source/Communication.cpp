@@ -3,6 +3,7 @@
 #include "interface/messaging/MessageReplicator.h"
 #include "Connection.h"
 #include "TubesUtility.h"
+#include <MUtilityLog.h>
 #include <MUtilitySerialization.h>
 
 #if PLATFORM == PLATFORM_WINDOWS
@@ -13,6 +14,8 @@
 	#define	RECEIVE_FLAGS 0
 #endif
 
+#define TUBES_LOG_CATEGORY_COMMUNICATION "TubesCommunication"
+
 using namespace TubesUtility;
 
 void Communication::SendTubesMessage( Connection& connection, const Message& message, MessageReplicator& replicator )
@@ -20,8 +23,9 @@ void Communication::SendTubesMessage( Connection& connection, const Message& mes
 	int32_t messageSize;
 	Byte* serializedMessage = replicator.SerializeMessage( &message, &messageSize );
 
-	if ( serializedMessage == nullptr ) {
-		LogWarningMessage( "Failed to send message of type" ); // TODODB: Print message type here when conversion from tString to rString bullshittery is resolved
+	if ( serializedMessage == nullptr )
+	{
+		MLOG_WARNING("Failed to send message of type", TUBES_LOG_CATEGORY_COMMUNICATION); // TODODB: Print message type here
 		free( serializedMessage );
 		return;
 	}
@@ -33,18 +37,18 @@ void Communication::SendTubesMessage( Connection& connection, const Message& mes
 void Communication::SendRawData( Connection& connection, const Byte* const data, int32_t dataSize )
 {
 	if ( connection.socket == INVALID_SOCKET )
-		LogErrorMessage( "Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String( connection.address ) + " )" );
+		MLOG_ERROR( "Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String( connection.address ) + " )", TUBES_LOG_CATEGORY_COMMUNICATION );
 
 	int32_t bytesSent = send( connection.socket, reinterpret_cast<const char*>(data), dataSize, SEND_FLAGS );
 	if ( bytesSent != dataSize )
 	{
 		int error = GET_NETWORK_ERROR;
-		if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_EWOULDBLOCK || error == EPIPE || error == TUBES_ECONNRESET )
+		if (error == TUBES_ECONNECTIONABORTED || error == TUBES_EWOULDBLOCK || error == EPIPE || error == TUBES_ECONNRESET)
 		{
 			// TODODB: Disconnect the socket
 		}
 		else
-			LogErrorMessage( "Sending of packet with length " + rToString( dataSize ) + " and destination " + AddressToIPv4String( connection.address ) + " failed" );
+			LogAPIErrorMessage("Sending of packet with length " << dataSize << " and destination " << AddressToIPv4String(connection.address) << " failed", TUBES_LOG_CATEGORY_COMMUNICATION);
 	}
 }
 
@@ -52,7 +56,7 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 {
 	if ( connection.socket == INVALID_SOCKET )
 	{
-		LogErrorMessage( "Attempted to receive from invalid socket" );
+		MLOG_ERROR( "Attempted to receive from invalid socket", TUBES_LOG_CATEGORY_COMMUNICATION );
 		return nullptr;
 	}
 
@@ -69,10 +73,10 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 				if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET ) // TODODB: Why isn't ECONNRESET checked when receiving payload data?
 				{
 					// TODODB: Disconnect the socket
-					LogInfoMessage( "Connection to " + TubesUtility::AddressToIPv4String( connection.address ) + " was aborted" )
+					MLOG_INFO( "Connection to " + TubesUtility::AddressToIPv4String(connection.address) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
 				}
 				else
-					LogErrorMessage( "An unhandled error occured while receiving header data" );
+					LogAPIErrorMessage( "An unhandled error occured while receiving header data", TUBES_LOG_CATEGORY_COMMUNICATION );
 			}
 			return nullptr;
 		}
@@ -108,10 +112,10 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 			if ( error == TUBES_ECONNECTIONABORTED )
 			{
 				// TODODB: Disconnect the socket
-				LogInfoMessage( "Connection to " + TubesUtility::AddressToIPv4String( connection.address ) + " was aborted" )
+				MLOG_INFO( "Connection to " + TubesUtility::AddressToIPv4String(connection.address) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
 			}
 			else
-				LogErrorMessage( "An unhandled error occured while receiving payload data" );
+				LogAPIErrorMessage( "An unhandled error occured while receiving payload data", TUBES_LOG_CATEGORY_COMMUNICATION );
 		}
 		return nullptr;
 	}
@@ -125,7 +129,7 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 
 		if ( replicators.find( replicatorID ) == replicators.end() ) // The requested replicator doesn't exist
 		{ 
-			LogErrorMessage( "Attempted to use replicator with id " + rToString( replicatorID ) + " but no such replicator exists" );
+			MLOG_ERROR( "Attempted to use replicator with id " << replicatorID + " but no such replicator exists", TUBES_LOG_CATEGORY_COMMUNICATION );
 			free( connection.receiveBuffer.PayloadData );
 			return nullptr;
 		}

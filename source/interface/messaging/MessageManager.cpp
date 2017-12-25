@@ -2,7 +2,10 @@
 #include "Subscriber.h"
 #include "UserMessage.h"
 #include "SimulationMessage.h"
+#include <MUtilityLog.h>
 #include <MUtilityThreading.h>
+
+#define MUTILITY_LOG_CATEGORY_MESSAGE_MANAGER "MessageManager"
 
 using namespace MutilityThreading;
 
@@ -51,7 +54,7 @@ bool MessageManager::RegisterSubscriber( Subscriber* subscriberToRegister )
 		if ( *m_Subscribers[i] == *subscriberToRegister ) // Check for duplicates
 		{
 			result = false;
-			//Logger::Log( "Attempted to register already registered subscriber \"" + subscriberToRegister->GetNameAsSubscriber() + "\"", "MessageManager", LogSeverity::WARNING_MSG ); TODODB: Log
+			MLOG_WARNING("Attempted to register already registered subscriber \"" + subscriberToRegister->GetNameAsSubscriber() + "\"", MUTILITY_LOG_CATEGORY_MESSAGE_MANAGER);
 			break;
 		}
 	}
@@ -85,9 +88,8 @@ bool MessageManager::UnregisterSubscriber( const Subscriber* const subscriberToU
 
 	UnlockMutexes( { &m_SubscriberLock, &m_UserMsgQueueLock, &m_SimMsgQueueLock } );
 
-	if ( !wasUnregistered ) {
-		// Logger::Log( "Attempted to unregister a non registered subscriber \"" + subscriberToUnregister->GetNameAsSubscriber() + "\"", "MessageManager", LogSeverity::WARNING_MSG ); // TODODB: Log
-	}
+	if ( !wasUnregistered )
+		MLOG_WARNING("Attempted to unregister a non registered subscriber \"" + subscriberToUnregister->GetNameAsSubscriber() + "\"", MUTILITY_LOG_CATEGORY_MESSAGE_MANAGER);
 
 	return wasUnregistered;
 }
