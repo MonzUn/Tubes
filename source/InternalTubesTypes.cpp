@@ -9,3 +9,9 @@ ReceiveBuffer::ReceiveBuffer()
 	PayloadData				= nullptr;
 	Walker					= reinterpret_cast<Byte*>( &ExpectedPayloadBytes );
 }
+
+ReceiveBuffer::~ReceiveBuffer()
+{
+	if ( PayloadData != nullptr )
+		free( PayloadData );
+}

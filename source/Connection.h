@@ -7,7 +7,8 @@
 #include <netinet/in.h> // for sockaddr_in
 #endif
 
-struct Connection {
+struct Connection
+{
 	Connection( Socket connectionSocket, const std::string& destinationAddress, Port destinationPort );
 	Connection( Socket connectionSocket, const sockaddr_in& destination );
 

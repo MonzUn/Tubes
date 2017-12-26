@@ -20,8 +20,11 @@ namespace Tubes
 	void StopAllListeners();
 
 	void RegisterReplicator( MessageReplicator* replicator );
+
 	ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction );
 	bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
+	DisconnectionCallbackHandle RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction );
+	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
 
 	bool GetHostFlag();
 	void SetHostFlag( bool isHost );

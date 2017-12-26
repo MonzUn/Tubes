@@ -8,6 +8,8 @@
 #include <atomic>
 #include <mutex>
 
+using namespace Tubes;
+
 class TubesMessageReplicator;
 
 class ConnectionManager
@@ -18,11 +20,16 @@ public:
 	void		VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator );
 
 	void		RequestConnection( const std::string& address, Port port );
+	void		DisconnectConnection( ConnectionID connectionID );
+	void		DisconnectAll();
+
 	void		StartListener( Port port );
 	void		StopAllListeners(); // TODODB: Add option to stop only specific listener
 	
 	ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction );
 	bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
+	DisconnectionCallbackHandle RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction);
+	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
 
 	Connection* GetConnection( ConnectionID connectionID ) const;
 	const std::unordered_map<ConnectionID, Connection*>& GetVerifiedConnections() const;
@@ -42,6 +49,7 @@ private:
 	std::unordered_map<Port, Listener*> m_ListenerMap;
 
 	CallbackRegister<ConnectionCallbackTag, void, uint32_t> m_ConnectionCallbacks;
+	CallbackRegister<DisconnectionCallbackTag, void, uint32_t> m_DisconnectionCallbacks;
 
 	ConnectionID m_NextConnectionID = 1;
 }; 

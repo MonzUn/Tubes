@@ -18,8 +18,14 @@
 
 using namespace TubesUtility;
 
-void Communication::SendTubesMessage( Connection& connection, const Message& message, MessageReplicator& replicator )
+SendResult Communication::SendTubesMessage( Connection& connection, const Message& message, MessageReplicator& replicator )
 {
+	if (connection.socket == INVALID_SOCKET)
+	{
+		MLOG_ERROR( "Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String(connection.address) + " )", TUBES_LOG_CATEGORY_COMMUNICATION );
+		return SendResult::Error;
+	}
+
 	int32_t messageSize;
 	Byte* serializedMessage = replicator.SerializeMessage( &message, &messageSize );
 
@@ -27,37 +33,42 @@ void Communication::SendTubesMessage( Connection& connection, const Message& mes
 	{
 		MLOG_WARNING("Failed to send message of type", TUBES_LOG_CATEGORY_COMMUNICATION); // TODODB: Print message type here
 		free( serializedMessage );
-		return;
+		return SendResult::Error;
 	}
-	
-	SendRawData( connection, serializedMessage, messageSize );
-	free(serializedMessage);
-}
 
-void Communication::SendRawData( Connection& connection, const Byte* const data, int32_t dataSize )
-{
-	if ( connection.socket == INVALID_SOCKET )
-		MLOG_ERROR( "Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String( connection.address ) + " )", TUBES_LOG_CATEGORY_COMMUNICATION );
-
-	int32_t bytesSent = send( connection.socket, reinterpret_cast<const char*>(data), dataSize, SEND_FLAGS );
-	if ( bytesSent != dataSize )
+	SendResult result;
+	int32_t bytesSent = send( connection.socket, reinterpret_cast<const char*>( serializedMessage ), messageSize, SEND_FLAGS );
+	if ( bytesSent != messageSize )
 	{
 		int error = GET_NETWORK_ERROR;
-		if (error == TUBES_ECONNECTIONABORTED || error == TUBES_EWOULDBLOCK || error == EPIPE || error == TUBES_ECONNRESET)
+		if (error == TUBES_ECONNECTIONABORTED || error == EPIPE || error == TUBES_ECONNRESET)
 		{
-			// TODODB: Disconnect the socket
+			result = SendResult::Disconnect;
+		}
+		else if ( error == TUBES_EWOULDBLOCK )
+		{
+			MLOG_DEBUG( "Send returned EWOULDBLOCK", TUBES_LOG_CATEGORY_COMMUNICATION );
+			result = SendResult::Error;
 		}
 		else
-			LogAPIErrorMessage("Sending of packet with length " << dataSize << " and destination " << AddressToIPv4String(connection.address) << " failed", TUBES_LOG_CATEGORY_COMMUNICATION);
+		{
+			result = SendResult::Error;
+			LogAPIErrorMessage( "Sending of packet with length " << messageSize << " and destination " << AddressToIPv4String( connection.address ) << " failed", TUBES_LOG_CATEGORY_COMMUNICATION );
+		}
 	}
+	else
+		result = SendResult::Sent;
+
+	free( serializedMessage );
+	return result;
 }
 
-Message* Communication::Receive( Connection& connection, const std::unordered_map<ReplicatorID, MessageReplicator*>& replicators )
+ReceiveResult Communication::Receive( Connection& connection, const std::unordered_map<ReplicatorID, MessageReplicator*>& replicators, Message*& outMessage )
 {
 	if ( connection.socket == INVALID_SOCKET )
 	{
 		MLOG_ERROR( "Attempted to receive from invalid socket", TUBES_LOG_CATEGORY_COMMUNICATION );
-		return nullptr;
+		return ReceiveResult::Error;;
 	}
 
 	int32_t byteCountReceived;
@@ -65,20 +76,28 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 	{ 
 		byteCountReceived = recv( connection.socket, reinterpret_cast<char*>( connection.receiveBuffer.Walker ), connection.receiveBuffer.ExpectedHeaderBytes, RECEIVE_FLAGS ); // Attempt to receive header
 
-		if ( byteCountReceived == -1 ) // No data was ready to be received or there was an error
+		if (byteCountReceived == 0)
+		{
+			return ReceiveResult::GracefulDisconnect;
+		}
+		else if ( byteCountReceived == -1 ) // No data was ready to be received or there was an error
 		{ 
+			ReceiveResult result = ReceiveResult::Empty;
 			int error = GET_NETWORK_ERROR;
 			if ( error != TUBES_EWOULDBLOCK )
 			{
 				if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET )
 				{
-					// TODODB: Disconnect the socket
-					MLOG_INFO( "Connection to " + TubesUtility::AddressToIPv4String(connection.address) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
+					result = ReceiveResult::ForcefulDisconnect;
+					MLOG_INFO( "A Connection with destination " + TubesUtility::AddressToIPv4String( connection.address ) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
 				}
 				else
-					LogAPIErrorMessage( "An unhandled error occured while receiving header data", TUBES_LOG_CATEGORY_COMMUNICATION );
+				{
+					result = ReceiveResult::Error;
+					LogAPIErrorMessage("An unhandled error occured while receiving header data", TUBES_LOG_CATEGORY_COMMUNICATION);
+				}
 			}
-			return nullptr;
+			return result;
 		}
 
 		if ( byteCountReceived == connection.receiveBuffer.ExpectedHeaderBytes ) // We received the full header
@@ -98,26 +117,34 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 		{ 
 			connection.receiveBuffer.ExpectedHeaderBytes	-= byteCountReceived;
 			connection.receiveBuffer.Walker					+= byteCountReceived;
-			return nullptr;
+			return ReceiveResult::PartialMessage;
 		}
 	}
 
 	byteCountReceived = recv( connection.socket, reinterpret_cast<char*>( connection.receiveBuffer.Walker ), connection.receiveBuffer.ExpectedPayloadBytes, RECEIVE_FLAGS ); // Attempt to receive payload
 
-	if ( byteCountReceived == -1 ) // No data was ready to be received or there was an error // TODODB: This code is almost duplicated. See if it can be removed
-	{ 
+	if (byteCountReceived == 0)
+	{
+		return ReceiveResult::GracefulDisconnect;
+	}
+	else if ( byteCountReceived == -1 ) // No data was ready to be received or there was an error // TODODB: This code is almost duplicated. See if it can be removed
+	{
+		ReceiveResult result = ReceiveResult::Empty;
 		int error = GET_NETWORK_ERROR;
 		if ( error != TUBES_EWOULDBLOCK )
 		{
 			if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET)
 			{
-				// TODODB: Disconnect the socket
-				MLOG_INFO( "Connection to " + TubesUtility::AddressToIPv4String(connection.address) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
+				result = ReceiveResult::ForcefulDisconnect;
+				MLOG_INFO( "Connection to " + TubesUtility::AddressToIPv4String( connection.address ) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
 			}
 			else
-				LogAPIErrorMessage( "An unhandled error occured while receiving payload data", TUBES_LOG_CATEGORY_COMMUNICATION );
+			{
+				result = ReceiveResult::Error;
+				LogAPIErrorMessage("An unhandled error occured while receiving payload data", TUBES_LOG_CATEGORY_COMMUNICATION);
+			}
 		}
-		return nullptr;
+		return result;
 	}
 
 	// If all data was received. Clean up, prepare for next call and return the buffer as a packet (Will need to be cast to the correct type on the outside using the Type field)
@@ -131,22 +158,22 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 		{ 
 			MLOG_ERROR( "Attempted to use replicator with id " << replicatorID + " but no such replicator exists", TUBES_LOG_CATEGORY_COMMUNICATION );
 			free( connection.receiveBuffer.PayloadData );
-			return nullptr;
+			return ReceiveResult::Error;
 		}
 
-		Message* message = replicators.at( replicatorID )->DeserializeMessage( connection.receiveBuffer.PayloadData );
-		free(connection.receiveBuffer.PayloadData);
+		outMessage = replicators.at( replicatorID )->DeserializeMessage( connection.receiveBuffer.PayloadData );
+		free( connection.receiveBuffer.PayloadData );
 		connection.receiveBuffer.ExpectedHeaderBytes	= sizeof( MessageSize ); // TODODB: Use default defines for these values
 		connection.receiveBuffer.ExpectedPayloadBytes	= NOT_EXPECTING_PAYLOAD;
 		connection.receiveBuffer.PayloadData			= nullptr;
 		connection.receiveBuffer.Walker					= reinterpret_cast<Byte*>( &connection.receiveBuffer.ExpectedPayloadBytes );
 
-		return message;
+		return ReceiveResult::Fullmessage;
 	}
 	else // Only part of the payload was received. Account for this and attempt to receive the rest in an upcoming call of this function
 	{ 
 		connection.receiveBuffer.ExpectedPayloadBytes	-= byteCountReceived;
 		connection.receiveBuffer.Walker					+= byteCountReceived;
-		return nullptr;
+		return ReceiveResult::PartialMessage;
 	}
 }

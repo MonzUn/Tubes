@@ -28,17 +28,7 @@ using namespace TubesUtility;
 
 ConnectionManager::~ConnectionManager()
 {
-	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i )
-	{
-		delete m_UnverifiedConnections[i].first;
-	}
-	m_UnverifiedConnections.clear();
-
-	for ( auto& idAndConnection : m_Connections )
-	{
-		delete idAndConnection.second;
-	}
-	m_Connections.clear();
+	DisconnectAll();
 }
 
 void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator )
@@ -48,6 +38,8 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 		std::unordered_map<ReplicatorID, MessageReplicator*> replicatorMap; // TODODB: Create overload of Communication::Receive that takes only a single replicator
 		replicatorMap.emplace( replicator.GetID(), &replicator );
 
+		Connection*& connection = m_UnverifiedConnections[i].first;
+
 		switch ( m_UnverifiedConnections[i].second )
 		{
 			case ConnectionState::NEW_IN : // TODODB: Implement logic for checking so that the remote client really is a tubes client
@@ -55,9 +47,9 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 				{
 					ConnectionID connectionID = m_NextConnectionID++;
 					ConnectionIDMessage idMessage = ConnectionIDMessage( connectionID );
-					Communication::SendTubesMessage( *m_UnverifiedConnections[i].first, idMessage, replicator );	
+					Communication::SendTubesMessage( *connection, idMessage, replicator );
 
-					m_Connections.emplace( connectionID, m_UnverifiedConnections[i].first );
+					m_Connections.emplace( connectionID, connection);
 					m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
 					m_ConnectionCallbacks.TriggerCallbacks( idMessage.ID );
 
@@ -72,22 +64,47 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 			case ConnectionState::NEW_OUT:
 				if ( !isHost )
 				{
-					Message* message;
-					while ( ( message = Communication::Receive( *m_UnverifiedConnections[i].first, replicatorMap ) ) != nullptr )
+					Message* message = nullptr;
+					ReceiveResult result;
+					result = Communication::Receive( *connection, replicatorMap, message );
+					switch( result )
 					{
-						if ( message->Type == TubesMessages::CONNECTION_ID )
+						case ReceiveResult::Fullmessage:
 						{
-							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( message );
+							if ( message->Type == TubesMessages::CONNECTION_ID )
+							{
+								ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( message );
 
-							m_Connections.emplace( idMessage->ID, m_UnverifiedConnections[i].first );
+								m_Connections.emplace( idMessage->ID, connection);
+								m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+								m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
+
+								MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->address ) + " was accepted", TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
+								free( message );
+							}
+							else
+							{
+								MLOG_WARNING( "Received an unexpected message type while verifying socket; message type = " << message->Type, TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
+								free( message );
+							}
+						} break;
+
+						case ReceiveResult::GracefulDisconnect:
+						case ReceiveResult::ForcefulDisconnect:
+						{
+							MLOG_INFO( "An unverified outgoing connection with destination " + TubesUtility::AddressToIPv4String( connection->address ) + " was disconnected during handshake", TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
+
+							ShutdownAndCloseSocket( connection->socket );
+							delete connection;
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
-							m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
+						} break;
 
-							MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String(m_Connections.at(idMessage->ID)->address) + " was accepted", TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
-							free(message);
+						case ReceiveResult::Empty:
+						case ReceiveResult::PartialMessage:
+						case ReceiveResult::Error:
+						default:
 							break;
-						}
-					}
+					} 
 				}
 				else
 				{
@@ -106,6 +123,47 @@ void ConnectionManager::RequestConnection( const std::string& address, Port port
 {
 	std::thread connectionThread = std::thread( &ConnectionManager::Connect, this, address, port ); // TODODB: Use a thread pool
 	connectionThread.detach();
+}
+
+void ConnectionManager::DisconnectConnection( ConnectionID connectionID )
+{
+	auto connectionIterator = m_Connections.find( connectionID );
+	if ( connectionIterator != m_Connections.end() )
+	{
+		Connection* connection = m_Connections.at( connectionID );
+		ShutdownAndCloseSocket( connection->socket );
+		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String( connection->address ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
+
+		delete connection;
+		m_Connections.erase( connectionIterator );
+
+		m_DisconnectionCallbacks.TriggerCallbacks( connectionID );
+	}
+	else
+		MLOG_WARNING( "Attempted to disconnect socket with id: " << connectionID + " but no socket with that ID was found", TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
+}
+
+void ConnectionManager::DisconnectAll()
+{
+	for ( auto& connectionAndState : m_UnverifiedConnections )
+	{
+		ShutdownAndCloseSocket( connectionAndState.first->socket );
+		MLOG_INFO( "An unverified connection with destination " + TubesUtility::AddressToIPv4String(connectionAndState.first->address) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
+
+		delete connectionAndState.first;
+	}
+	m_UnverifiedConnections.clear();
+
+	for ( auto& idAndConnection : m_Connections )
+	{
+		ShutdownAndCloseSocket( idAndConnection.second->socket );
+		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String(idAndConnection.second->address) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTIONMANAGER );
+
+		delete idAndConnection.second;
+
+		m_DisconnectionCallbacks.TriggerCallbacks( idAndConnection.first );
+	}
+	m_Connections.clear();
 }
 
 void ConnectionManager::StartListener( Port port ) // TODODB: Add check against duplicates
@@ -178,6 +236,16 @@ ConnectionCallbackHandle ConnectionManager::RegisterConnectionCallback( Connecti
 bool ConnectionManager::UnregisterConnectionCallback( ConnectionCallbackHandle handle )
 {
 	return m_ConnectionCallbacks.UnregisterCallback( handle );
+}
+
+DisconnectionCallbackHandle ConnectionManager::RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction )
+{
+	return m_DisconnectionCallbacks.RegisterCallback( callbackFunction );
+}
+
+bool ConnectionManager::UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle )
+{
+	return m_DisconnectionCallbacks.UnregisterCallback( handle );
 }
 
 void ConnectionManager::Connect( const std::string& address, Port port ) // TODODB: Make this run on a separate thread to avoid blocking the main thread

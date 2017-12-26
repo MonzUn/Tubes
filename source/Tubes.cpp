@@ -48,7 +48,7 @@ bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the isnta
 			m_TubesMessageReplicator = new TubesMessageReplicator;
 			m_ReplicatorReferences.emplace(m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator);
 
-			MLOG_INFO( "Tubes was successfully initialized", TUBES_LOG_CATEGORY_GENERAL );
+			MLOG_INFO( "Tubes initialized successfully", TUBES_LOG_CATEGORY_GENERAL );
 		}
 	}
 	else
@@ -62,6 +62,7 @@ void Tubes::Shutdown()
 	if ( m_Initialized )
 	{
 		m_ConnectionManager->StopAllListeners();
+		m_ConnectionManager->DisconnectAll();
 
 		#if PLATFORM == PLATFORM_WINDOWS
 			WSACleanup();
@@ -101,8 +102,22 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 		Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
 		if ( connection != nullptr )
 		{
-			if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() )
-				Communication::SendTubesMessage( *connection, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+			if (m_ReplicatorReferences.find(message->Replicator_ID) != m_ReplicatorReferences.end())
+			{
+				SendResult result = Communication::SendTubesMessage( *connection, *message, *m_ReplicatorReferences.at( message->Replicator_ID ));
+				switch ( result )
+				{
+					case SendResult::Disconnect:
+					{
+						m_ConnectionManager->DisconnectConnection( destinationConnectionID );
+					} break;
+
+					case SendResult::Sent:
+					case SendResult::Error:
+					default:
+						break;
+					}
+			}
 			else
 				MLOG_ERROR( "Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, TUBES_LOG_CATEGORY_GENERAL );
 		}
@@ -152,23 +167,51 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 {
 	if ( m_Initialized )
 	{
+		std::vector<ConnectionID> toDisconnect;
 		const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 		for ( auto& idAndConnection : connections )
 		{
-			Message* message;
-			while ( (message = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences ) ) != nullptr )
+			bool disconnected = false;
+			Message* message = nullptr;
+			ReceiveResult result;
+			do
 			{
-				if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID )
+				result = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences, message );
+				switch ( result )
 				{
-					m_ReceivedTubesMessages.push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
+					case ReceiveResult::Fullmessage:
+					{
+						if (message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID)
+						{
+							m_ReceivedTubesMessages.push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
+						}
+						else
+						{
+							outMessages.push_back( message );
+							if ( outSenderIDs )
+								outSenderIDs->push_back( idAndConnection.first );
+						}
+					} break;
+
+					case ReceiveResult::GracefulDisconnect:
+					case ReceiveResult::ForcefulDisconnect:
+					{
+						toDisconnect.push_back( idAndConnection.first );
+						disconnected = true;
+					} break;
+
+					case ReceiveResult::Empty:
+					case ReceiveResult::PartialMessage:
+					case ReceiveResult::Error:
+					default:
+						break;
 				}
-				else
-				{
-					outMessages.push_back( message );
-					if ( outSenderIDs )
-						outSenderIDs->push_back( idAndConnection.first );
-				}
-			}
+			} while ( result == ReceiveResult::Fullmessage && !disconnected );
+		}
+
+		for ( int i = 0; i < toDisconnect.size(); ++i )
+		{
+			m_ConnectionManager->DisconnectConnection( toDisconnect[i] );
 		}
 	}
 	else
@@ -212,6 +255,16 @@ ConnectionCallbackHandle Tubes::RegisterConnectionCallback( ConnectionCallbackFu
 bool Tubes::UnregisterConnectionCallback( ConnectionCallbackHandle handle )
 {
 	return m_ConnectionManager->UnregisterConnectionCallback( handle );
+}
+
+DisconnectionCallbackHandle Tubes::RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction )
+{
+	return m_ConnectionManager->RegisterDisconnectionCallback( callbackFunction );
+}
+
+bool Tubes::UnregisterDisconnectionCallback(DisconnectionCallbackHandle handle)
+{
+	return m_ConnectionManager->UnregisterDisconnectionCallback( handle );
 }
 
 bool Tubes::GetHostFlag()
