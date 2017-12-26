@@ -70,7 +70,7 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 			int error = GET_NETWORK_ERROR;
 			if ( error != TUBES_EWOULDBLOCK )
 			{
-				if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET ) // TODODB: Why isn't ECONNRESET checked when receiving payload data?
+				if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET )
 				{
 					// TODODB: Disconnect the socket
 					MLOG_INFO( "Connection to " + TubesUtility::AddressToIPv4String(connection.address) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
@@ -109,7 +109,7 @@ Message* Communication::Receive( Connection& connection, const std::unordered_ma
 		int error = GET_NETWORK_ERROR;
 		if ( error != TUBES_EWOULDBLOCK )
 		{
-			if ( error == TUBES_ECONNECTIONABORTED )
+			if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET)
 			{
 				// TODODB: Disconnect the socket
 				MLOG_INFO( "Connection to " + TubesUtility::AddressToIPv4String(connection.address) + " was aborted", TUBES_LOG_CATEGORY_COMMUNICATION );
