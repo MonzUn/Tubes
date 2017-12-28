@@ -18,7 +18,7 @@
 
 using namespace TubesUtility;
 
-SendResult Communication::SendTubesMessage( Connection& connection, const Message& message, MessageReplicator& replicator )
+SendResult Communication::SerializeAndSendMessage( Connection& connection, const Message& message, MessageReplicator& replicator )
 {
 	if (connection.socket == INVALID_SOCKET)
 	{
@@ -26,29 +26,50 @@ SendResult Communication::SendTubesMessage( Connection& connection, const Messag
 		return SendResult::Error;
 	}
 
-	int32_t messageSize;
+	MessageSize messageSize;
 	Byte* serializedMessage = replicator.SerializeMessage( &message, &messageSize );
 
 	if ( serializedMessage == nullptr )
 	{
-		MLOG_WARNING("Failed to send message of type", TUBES_LOG_CATEGORY_COMMUNICATION); // TODODB: Print message type here
+		MLOG_WARNING("Failed to serialize message of type" << message.Type + ". The message will not be sent", TUBES_LOG_CATEGORY_COMMUNICATION);
 		free( serializedMessage );
 		return SendResult::Error;
 	}
 
+	if ( !connection.unsentMessages.empty() )
+	{
+		connection.unsentMessages.push( std::pair<Byte*, MessageSize>( serializedMessage, messageSize ) );
+		return SendResult::Queued;
+	}
+
+	return SendSerializedMessage( connection, serializedMessage, messageSize );
+}
+
+SendResult Communication::SendSerializedMessage( Connection& connection, Byte* serializedMessage, MessageSize messageSize )
+{
+	if ( !connection.unsentMessages.empty() && connection.unsentMessages.front().first != serializedMessage )
+		return SendResult::Queued; // Do not send messages out of order
+
 	SendResult result;
 	int32_t bytesSent = send( connection.socket, reinterpret_cast<const char*>( serializedMessage ), messageSize, SEND_FLAGS );
-	if ( bytesSent != messageSize )
+	if ( bytesSent == messageSize )
+	{
+		free( serializedMessage );
+		result = SendResult::Sent;
+	}
+	else
 	{
 		int error = GET_NETWORK_ERROR;
-		if (error == TUBES_ECONNECTIONABORTED || error == EPIPE || error == TUBES_ECONNRESET)
+		if ( error == TUBES_ECONNECTIONABORTED || error == EPIPE || error == TUBES_ECONNRESET )
 		{
 			result = SendResult::Disconnect;
 		}
-		else if ( error == TUBES_EWOULDBLOCK )
+		else if ( error == TUBES_EWOULDBLOCK ) // IF EWOULDBLOCK is set, the send buffer is full
 		{
-			MLOG_DEBUG( "Send returned EWOULDBLOCK", TUBES_LOG_CATEGORY_COMMUNICATION );
-			result = SendResult::Error;
+			if( connection.unsentMessages.empty() ) // This is not a resend; put the message in the queue to be sent later
+				connection.unsentMessages.push( std::pair<Byte*, MessageSize>( serializedMessage, messageSize ) );
+
+			result = SendResult::Queued;
 		}
 		else
 		{
@@ -56,10 +77,7 @@ SendResult Communication::SendTubesMessage( Connection& connection, const Messag
 			LogAPIErrorMessage( "Sending of packet with length " << messageSize << " and destination " << AddressToIPv4String( connection.address ) << " failed", TUBES_LOG_CATEGORY_COMMUNICATION );
 		}
 	}
-	else
-		result = SendResult::Sent;
 
-	free( serializedMessage );
 	return result;
 }
 
@@ -84,7 +102,7 @@ ReceiveResult Communication::Receive( Connection& connection, const std::unorder
 		{ 
 			ReceiveResult result = ReceiveResult::Empty;
 			int error = GET_NETWORK_ERROR;
-			if ( error != TUBES_EWOULDBLOCK )
+			if ( error != TUBES_EWOULDBLOCK ) // If EWOULDBLOCK is set, the receive buffer is empty
 			{
 				if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET )
 				{
@@ -131,7 +149,7 @@ ReceiveResult Communication::Receive( Connection& connection, const std::unorder
 	{
 		ReceiveResult result = ReceiveResult::Empty;
 		int error = GET_NETWORK_ERROR;
-		if ( error != TUBES_EWOULDBLOCK )
+		if ( error != TUBES_EWOULDBLOCK ) // If EWOULDBLOCK is set, the receive buffer is empty
 		{
 			if ( error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET)
 			{

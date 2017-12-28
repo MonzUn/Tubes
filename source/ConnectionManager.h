@@ -20,7 +20,7 @@ public:
 	void		VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator );
 
 	void		RequestConnection( const std::string& address, Port port );
-	void		DisconnectConnection( ConnectionID connectionID );
+	void		Disconnect( ConnectionID connectionID );
 	void		DisconnectAll();
 
 	void		StartListener( Port port );

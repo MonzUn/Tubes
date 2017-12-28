@@ -7,7 +7,6 @@
 #include "ConnectionManager.h"
 #include <MUtilityLog.h>
 
-
 #if PLATFORM == PLATFORM_WINDOWS
 	#include <MUtilityWindowsInclude.h>
 	#pragma comment( lib, "Ws2_32.lib" ) // TODODB: See if this can be done through cmake instead
@@ -19,7 +18,7 @@
 
 #define TUBES_LOG_CATEGORY_GENERAL "Tubes"
 
-ConnectionManager*	m_ConnectionManager;
+ConnectionManager*	m_ConnectionManager; // TODODB: Create an internal header to structure these variables and functions
 
 std::unordered_map<ReplicatorID, MessageReplicator*>	m_ReplicatorReferences;
 TubesMessageReplicator*									m_TubesMessageReplicator;
@@ -29,24 +28,26 @@ std::vector<TubesMessage*> m_ReceivedTubesMessages;
 bool m_Initialized = false;
 bool m_HostFlag = false;
 
+bool SendQueuedMessages( Connection& connection ) ;
+
 bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the isntance is already initialized
 { 
-	if (!m_Initialized)
+	if ( !m_Initialized )
 	{
 #if PLATFORM == PLATFORM_WINDOWS
 		WSADATA wsaData;
-		m_Initialized = WSAStartup(MAKEWORD(2, 2), &wsaData) == NO_ERROR; // Initialize WSA version 2.2
-		if (!m_Initialized)
+		m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
+		if ( !m_Initialized )
 			LogAPIErrorMessage( "Failed to initialize Tubes since WSAStartup failed", TUBES_LOG_CATEGORY_GENERAL );
 #else 
 		m_Initialized = true;
 #endif
 
-		if (m_Initialized)
+		if ( m_Initialized )
 		{
 			m_ConnectionManager = new ConnectionManager;
 			m_TubesMessageReplicator = new TubesMessageReplicator;
-			m_ReplicatorReferences.emplace(m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator);
+			m_ReplicatorReferences.emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
 
 			MLOG_INFO( "Tubes initialized successfully", TUBES_LOG_CATEGORY_GENERAL );
 		}
@@ -90,7 +91,26 @@ void Tubes::Shutdown()
 void Tubes::Update()
 {
 	if ( m_Initialized )
+	{
 		m_ConnectionManager->VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator );
+
+		// Send queued messages
+		std::vector<ConnectionID> toDisconnect;
+		for ( auto& idAndConnection : m_ConnectionManager->GetVerifiedConnections() )
+		{
+			if ( !SendQueuedMessages( *idAndConnection.second ) )
+			{
+				// The connection is no longer in a usable state
+				toDisconnect.push_back( idAndConnection.first );
+				continue;
+			}
+		}
+
+		for ( int i = 0; i < toDisconnect.size(); ++i )
+		{
+			m_ConnectionManager->Disconnect( toDisconnect[i] );
+		}
+	}
 	else
 		MLOG_ERROR( "Attempted to update uninitialized instance of Tubes", TUBES_LOG_CATEGORY_GENERAL );
 }
@@ -102,21 +122,30 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 		Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
 		if ( connection != nullptr )
 		{
-			if (m_ReplicatorReferences.find(message->Replicator_ID) != m_ReplicatorReferences.end())
+			// Attempt to send queued messages first
+			if ( !SendQueuedMessages( *connection ) )
 			{
-				SendResult result = Communication::SendTubesMessage( *connection, *message, *m_ReplicatorReferences.at( message->Replicator_ID ));
+				// The connection is no longer in a usable state
+				m_ConnectionManager->Disconnect( destinationConnectionID );
+				return;
+			}
+
+			if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() )
+			{
+				SendResult result = Communication::SerializeAndSendMessage( *connection, *message, *m_ReplicatorReferences.at( message->Replicator_ID ));
 				switch ( result )
 				{
 					case SendResult::Disconnect:
 					{
-						m_ConnectionManager->DisconnectConnection( destinationConnectionID );
+						m_ConnectionManager->Disconnect( destinationConnectionID );
 					} break;
 
 					case SendResult::Sent:
+					case SendResult::Queued:
 					case SendResult::Error:
 					default:
 						break;
-					}
+				}
 			}
 			else
 				MLOG_ERROR( "Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, TUBES_LOG_CATEGORY_GENERAL );
@@ -150,10 +179,39 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 					MLOG_WARNING( "The excepted connectionID supplied to SendToAll does not exist", TUBES_LOG_CATEGORY_GENERAL );
 			}
 #endif
+			std::vector<ConnectionID> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
 			for ( auto& idAndConnection : connections )
 			{
 				if ( idAndConnection.first != exception )
-					Communication::SendTubesMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+				{
+					// Attempt to send queued messages first
+					if (!SendQueuedMessages( *idAndConnection.second ) )
+					{
+						// The connection is no longer in a usable state
+						toDisconnect.push_back( idAndConnection.first );
+						continue; 
+					}
+					
+					SendResult result = Communication::SerializeAndSendMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+					switch ( result )
+					{
+						case SendResult::Disconnect:
+						{
+							toDisconnect.push_back( idAndConnection.first );
+						} break;
+
+						case SendResult::Sent:
+						case SendResult::Queued:
+						case SendResult::Error:
+						default:
+							break;
+					}
+				}
+			}
+
+			for (int i = 0; i < toDisconnect.size(); ++i)
+			{
+				m_ConnectionManager->Disconnect( toDisconnect[i] );
 			}
 		}
 		else
@@ -167,7 +225,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 {
 	if ( m_Initialized )
 	{
-		std::vector<ConnectionID> toDisconnect;
+		std::vector<ConnectionID> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
 		const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 		for ( auto& idAndConnection : connections )
 		{
@@ -181,7 +239,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 				{
 					case ReceiveResult::Fullmessage:
 					{
-						if (message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID)
+						if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID )
 						{
 							m_ReceivedTubesMessages.push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
 						}
@@ -211,7 +269,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 
 		for ( int i = 0; i < toDisconnect.size(); ++i )
 		{
-			m_ConnectionManager->DisconnectConnection( toDisconnect[i] );
+			m_ConnectionManager->Disconnect( toDisconnect[i] );
 		}
 	}
 	else
@@ -275,4 +333,38 @@ bool Tubes::GetHostFlag()
 void Tubes::SetHostFlag( bool newHostFlag )
 {
 	m_HostFlag = newHostFlag;
+}
+
+// ---------- LOCAL ----------
+
+bool SendQueuedMessages( Connection& connection ) // TODODB: Handle error cases better (Don't just leave the messages in the queue)
+{
+	bool stillConnected = true;
+	bool keepSending	= true;
+	while ( !connection.unsentMessages.empty() && keepSending )
+	{
+		SendResult result = Communication::SendSerializedMessage( connection, connection.unsentMessages.front().first, connection.unsentMessages.front().second);
+		switch ( result )
+		{
+			case SendResult::Sent:
+			{
+				connection.unsentMessages.pop();
+			} break;
+
+			case SendResult::Disconnect:
+			{
+				stillConnected	= false; // Signal that the socket is no longer usable and should be disconencted
+				keepSending		= false;
+			} break;
+
+			case SendResult::Queued:
+			case SendResult::Error:
+			default:
+			{
+				keepSending = false;
+			} break;
+		}
+	}
+
+	return stillConnected;
 }

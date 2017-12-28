@@ -13,13 +13,15 @@ enum class	ReceiveResult;
 
 namespace Communication
 {
-	SendResult		SendTubesMessage( Connection& connection, const Message& message, MessageReplicator& replicator ); // "Tubes" added to name in order to avoid conflict with windows define "SendMessage"
+	SendResult		SerializeAndSendMessage( Connection& connection, const Message& message, MessageReplicator& replicator );
+	SendResult		SendSerializedMessage( Connection& connection, Byte* serializedMessage, MessageSize messageSize );
 	ReceiveResult	Receive( Connection& connection, const std::unordered_map<ReplicatorID, MessageReplicator*>& replicators, Message*& outMessage );
 }
 
 enum class SendResult
 {
 	Sent,
+	Queued,
 	Disconnect,
 	Error,
 };

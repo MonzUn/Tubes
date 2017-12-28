@@ -36,6 +36,15 @@ Connection::Connection( Socket connectionSocket, const sockaddr_in& destination 
 	sockaddr.sin_port			= destination.sin_port;
 }
 
+Connection::~Connection()
+{
+	while(!unsentMessages.empty())
+	{
+		free( unsentMessages.front().first );
+		unsentMessages.pop();
+	}
+}
+
 bool Connection::SetBlockingMode( bool shouldBlock )
 {
 	int result;

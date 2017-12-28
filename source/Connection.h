@@ -1,5 +1,6 @@
 #pragma once
 #include "InternalTubesTypes.h"
+#include <queue>
 #if PLATFORM == PLATFORM_WINDOWS
 #include <WinSock2.h>
 #else
@@ -11,6 +12,7 @@ struct Connection
 {
 	Connection( Socket connectionSocket, const std::string& destinationAddress, Port destinationPort );
 	Connection( Socket connectionSocket, const sockaddr_in& destination );
+	~Connection();
 
 	bool					SetBlockingMode( bool shouldBlock );
 	bool					SetNoDelay(); // TODODB: Make this function take a parameter so it can be used to turn nodelay off
@@ -23,4 +25,6 @@ struct Connection
 	Port					port;
 	struct sockaddr_in		sockaddr;
 	ReceiveBuffer			receiveBuffer;
+
+	std::queue<std::pair<Byte*, MessageSize>> unsentMessages; // TODODB: Create struct holding Byte* and Messagesize to get rid of code like".front().first"
 };

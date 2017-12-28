@@ -40,6 +40,37 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 
 		Connection*& connection = m_UnverifiedConnections[i].first;
 
+		// Send any previously queued messages
+		bool keepSending = true;
+		while ( !connection->unsentMessages.empty() && keepSending ) // TODODB: Handle error cases better (Don't just leave the messages in the queue)
+		{
+			SendResult result = Communication::SendSerializedMessage( *connection, connection->unsentMessages.front().first, connection->unsentMessages.front().second );
+			switch ( result )
+			{
+				case SendResult::Sent:
+				{
+					connection->unsentMessages.pop();
+				} break;
+
+				case SendResult::Disconnect:
+				{
+					ShutdownAndCloseSocket( connection->socket );
+					delete connection;
+					keepSending = false;
+					m_UnverifiedConnections.erase(m_UnverifiedConnections.begin() + i);
+					--i;
+				} break;
+
+				case SendResult::Queued:
+				case SendResult::Error:
+				default:
+				{
+					keepSending = false;
+				} break;
+			}
+		}
+
+		// Perform verification
 		switch ( m_UnverifiedConnections[i].second )
 		{
 			case ConnectionState::NEW_IN : // TODODB: Implement logic for checking so that the remote client really is a tubes client
@@ -47,7 +78,21 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 				{
 					ConnectionID connectionID = m_NextConnectionID++;
 					ConnectionIDMessage idMessage = ConnectionIDMessage( connectionID );
-					Communication::SendTubesMessage( *connection, idMessage, replicator );
+					SendResult result = Communication::SerializeAndSendMessage( *connection, idMessage, replicator );
+					switch ( result )
+					{
+						case SendResult::Disconnect:
+						{
+							ShutdownAndCloseSocket( connection->socket );
+							delete connection;
+						} break;
+
+						case SendResult::Sent:
+						case SendResult::Queued:
+						case SendResult::Error:
+						default:
+							break;
+					}
 
 					m_Connections.emplace( connectionID, connection);
 					m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
@@ -125,7 +170,7 @@ void ConnectionManager::RequestConnection( const std::string& address, Port port
 	connectionThread.detach();
 }
 
-void ConnectionManager::DisconnectConnection( ConnectionID connectionID )
+void ConnectionManager::Disconnect( ConnectionID connectionID )
 {
 	auto connectionIterator = m_Connections.find( connectionID );
 	if ( connectionIterator != m_Connections.end() )
