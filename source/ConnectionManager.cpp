@@ -75,9 +75,9 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 
 					m_Connections.emplace( connectionID, connection);
 					m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
-					m_ConnectionCallbacks.TriggerCallbacks( idMessage.ID );
 
 					MLOG_INFO( "An incoming connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( connectionID)->GetAddress() ) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+					m_ConnectionCallbacks.TriggerCallbacks( idMessage.ID );
 				}
 				else
 				{
@@ -101,9 +101,9 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 
 								m_Connections.emplace( idMessage->ID, connection);
 								m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
-								m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
 
 								MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->GetAddress() ) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+								m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
 								free( message );
 							}
 							else
