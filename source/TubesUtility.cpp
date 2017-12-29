@@ -1,6 +1,8 @@
 #include "TubesUtility.h"
 #include <sstream>
 
+#define TUBES_LOG_CATEGORY_UTILITY "TubesUtility"
+
 std::string TubesUtility::GetErrorName( int errorCode ) // TODODB: See if the windows part can be cleaned up
 { 
 #if PLATFORM == PLATFORM_WINDOWS
@@ -46,4 +48,26 @@ Address TubesUtility::IPv4StringToAddress( const std::string& addressString )
 	}
 
 	return ( adressParts[0] << 24 ) | ( adressParts[1] << 16 ) | ( adressParts[2] << 8 ) | adressParts[3];
+}
+
+void TubesUtility::ShutdownAndCloseSocket( Socket socket )
+{
+	int result;
+#if PLATFORM == PLATFORM_WINDOWS
+	result = shutdown( socket, SD_BOTH );
+#else
+	result = shutdown( socket, SHUT_RDWR );
+#endif
+	if ( result != 0 )
+		LogAPIErrorMessage( "Failed to shut down socket", TUBES_LOG_CATEGORY_UTILITY );
+
+#if PLATFORM == PLATFORM_WINDOWS
+	result = closesocket( socket );
+#else
+	result = close( socket );
+#endif
+	if ( result != 0 )
+		LogAPIErrorMessage( "Failed to close socket", TUBES_LOG_CATEGORY_UTILITY );
+
+	socket = INVALID_SOCKET;
 }

@@ -7,7 +7,7 @@
 
 #define MUTILITY_LOG_CATEGORY_MESSAGE_MANAGER "MessageManager"
 
-using namespace MutilityThreading;
+using namespace MUtilityThreading;
 
 MessageManager::MessageManager() {}
 

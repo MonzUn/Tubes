@@ -1,5 +1,8 @@
 #pragma once
 #include "TubesMessageBase.h"
+#include "interface/TubesTypes.h"
+
+using Tubes::ConnectionID;
 
 namespace TubesMessages
 {

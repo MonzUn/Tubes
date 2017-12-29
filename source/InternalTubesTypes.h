@@ -21,30 +21,10 @@ typedef int64_t		Socket;
 typedef int socklen_t;
 #endif
 
-enum ConnectionState
+enum class ConnectionState
 {
-	NEW_OUT,
-	NEW_IN,
-};
-
-struct Listener
-{
-	Listener()
-	{
-		Thread = nullptr;
-		ListeningSocket = INVALID_SOCKET;
-		ShouldTerminate = new std::atomic<bool>(false);
-	}
-
-	~Listener()
-	{
-		delete Thread;
-		delete ShouldTerminate;
-	}
-
-	Socket				ListeningSocket;
-	std::thread*		Thread;
-	std::atomic<bool>*	ShouldTerminate;
+	NewOutgoing,
+	NewIncoming,
 };
 
 struct ReceiveBuffer

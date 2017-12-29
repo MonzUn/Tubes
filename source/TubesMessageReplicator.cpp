@@ -1,5 +1,5 @@
 #include "TubesMessageReplicator.h"
-#include "TubesTypes.h"
+#include "interface/TubesTypes.h"
 #include "TubesUtility.h"
 #include "TubesMessages.h"
 #include <MUtilityLog.h>
@@ -9,6 +9,8 @@
 using namespace DataSizes;
 using namespace MUtilitySerialization;
 using namespace TubesMessages;
+
+using Tubes::ConnectionID;
 
 #define TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR "TubesMessageReplicator"
 

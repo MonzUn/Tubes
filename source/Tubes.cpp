@@ -3,7 +3,6 @@
 #include "TubesUtility.h"
 #include "TubesMessageBase.h"
 #include "TubesMessageReplicator.h"
-#include "Communication.h"
 #include "ConnectionManager.h"
 #include <MUtilityLog.h>
 
@@ -27,8 +26,6 @@ std::vector<TubesMessage*> m_ReceivedTubesMessages;
 
 bool m_Initialized = false;
 bool m_HostFlag = false;
-
-bool SendQueuedMessages( Connection& connection ) ;
 
 bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the isntance is already initialized
 { 
@@ -98,9 +95,9 @@ void Tubes::Update()
 		std::vector<ConnectionID> toDisconnect;
 		for ( auto& idAndConnection : m_ConnectionManager->GetVerifiedConnections() )
 		{
-			if ( !SendQueuedMessages( *idAndConnection.second ) )
+			SendResult sendResult = idAndConnection.second->SendQueuedMessages();
+			if ( sendResult == SendResult::Disconnect )
 			{
-				// The connection is no longer in a usable state
 				toDisconnect.push_back( idAndConnection.first );
 				continue;
 			}
@@ -122,17 +119,9 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 		Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
 		if ( connection != nullptr )
 		{
-			// Attempt to send queued messages first
-			if ( !SendQueuedMessages( *connection ) )
-			{
-				// The connection is no longer in a usable state
-				m_ConnectionManager->Disconnect( destinationConnectionID );
-				return;
-			}
-
 			if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() )
 			{
-				SendResult result = Communication::SerializeAndSendMessage( *connection, *message, *m_ReplicatorReferences.at( message->Replicator_ID ));
+				SendResult result = connection->SerializeAndSendMessage( *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
 				switch ( result )
 				{
 					case SendResult::Disconnect:
@@ -183,16 +172,8 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 			for ( auto& idAndConnection : connections )
 			{
 				if ( idAndConnection.first != exception )
-				{
-					// Attempt to send queued messages first
-					if (!SendQueuedMessages( *idAndConnection.second ) )
-					{
-						// The connection is no longer in a usable state
-						toDisconnect.push_back( idAndConnection.first );
-						continue; 
-					}
-					
-					SendResult result = Communication::SerializeAndSendMessage( *idAndConnection.second, *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+				{	
+					SendResult result = idAndConnection.second->SerializeAndSendMessage( *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
 					switch ( result )
 					{
 						case SendResult::Disconnect:
@@ -234,7 +215,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 			ReceiveResult result;
 			do
 			{
-				result = Communication::Receive( *idAndConnection.second, m_ReplicatorReferences, message );
+				result = idAndConnection.second->Receive( m_ReplicatorReferences, message );
 				switch ( result )
 				{
 					case ReceiveResult::Fullmessage:
@@ -333,38 +314,4 @@ bool Tubes::GetHostFlag()
 void Tubes::SetHostFlag( bool newHostFlag )
 {
 	m_HostFlag = newHostFlag;
-}
-
-// ---------- LOCAL ----------
-
-bool SendQueuedMessages( Connection& connection ) // TODODB: Handle error cases better (Don't just leave the messages in the queue)
-{
-	bool stillConnected = true;
-	bool keepSending	= true;
-	while ( !connection.unsentMessages.empty() && keepSending )
-	{
-		SendResult result = Communication::SendSerializedMessage( connection, connection.unsentMessages.front().first, connection.unsentMessages.front().second);
-		switch ( result )
-		{
-			case SendResult::Sent:
-			{
-				connection.unsentMessages.pop();
-			} break;
-
-			case SendResult::Disconnect:
-			{
-				stillConnected	= false; // Signal that the socket is no longer usable and should be disconencted
-				keepSending		= false;
-			} break;
-
-			case SendResult::Queued:
-			case SendResult::Error:
-			default:
-			{
-				keepSending = false;
-			} break;
-		}
-	}
-
-	return stillConnected;
 }
