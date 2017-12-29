@@ -281,6 +281,16 @@ void Tubes::StopAllListeners()
 		MLOG_ERROR( "Attempted to stop all listeners although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
 }
 
+void Tubes::Disconnect(ConnectionID connectionID)
+{
+	m_ConnectionManager->Disconnect(connectionID);
+}
+
+void Tubes::DisconnectAll()
+{
+	m_ConnectionManager->DisconnectAll();
+}
+
 void Tubes::RegisterReplicator( MessageReplicator* replicator ) // TODODB: Add unregistration function
 {
 	m_ReplicatorReferences.emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
