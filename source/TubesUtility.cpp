@@ -50,7 +50,7 @@ Address TubesUtility::IPv4StringToAddress( const std::string& addressString )
 	return ( adressParts[0] << 24 ) | ( adressParts[1] << 16 ) | ( adressParts[2] << 8 ) | adressParts[3];
 }
 
-void TubesUtility::ShutdownAndCloseSocket( Socket socket )
+void TubesUtility::ShutdownAndCloseSocket( Socket& socket )
 {
 	int result;
 #if PLATFORM == PLATFORM_WINDOWS
@@ -61,6 +61,12 @@ void TubesUtility::ShutdownAndCloseSocket( Socket socket )
 	if ( result != 0 )
 		LogAPIErrorMessage( "Failed to shut down socket", TUBES_LOG_CATEGORY_UTILITY );
 
+	CloseSocket( socket );
+}
+
+void TubesUtility::CloseSocket( Socket& socket )
+{
+	int result;
 #if PLATFORM == PLATFORM_WINDOWS
 	result = closesocket( socket );
 #else

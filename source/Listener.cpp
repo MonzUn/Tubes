@@ -62,7 +62,7 @@ bool Listener::StartListening(Port port)
 void Listener::StopListening()
 {
 	*m_ShouldTerminateListeningThread = true;
-	TubesUtility::ShutdownAndCloseSocket(m_ListeningSocket);
+	TubesUtility::CloseSocket(m_ListeningSocket);
 	MUtilityThreading::JoinThread(*m_Thread);
 }
 
