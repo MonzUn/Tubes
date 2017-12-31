@@ -8,8 +8,10 @@
 
 #if PLATFORM == PLATFORM_WINDOWS
 	#include <MUtilityWindowsInclude.h>
+	#include <Ws2tcpip.h>
 	#pragma comment( lib, "Ws2_32.lib" ) // TODODB: See if this can be done through cmake instead
 #elif PLATFORM == PLATFORM_LINUX
+	#include <arpa/inet.h>
 	#include <sys/socket.h>
 	#include <netinet/in.h>
 	#include <fcntl.h>
@@ -281,7 +283,7 @@ void Tubes::StopAllListeners()
 		MLOG_ERROR( "Attempted to stop all listeners although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
 }
 
-void Tubes::Disconnect(ConnectionID connectionID)
+void Tubes::Disconnect( ConnectionID connectionID )
 {
 	m_ConnectionManager->Disconnect(connectionID);
 }
@@ -314,6 +316,18 @@ DisconnectionCallbackHandle Tubes::RegisterDisconnectionCallback( DisconnectionC
 bool Tubes::UnregisterDisconnectionCallback(DisconnectionCallbackHandle handle)
 {
 	return m_ConnectionManager->UnregisterDisconnectionCallback( handle );
+}
+
+bool Tubes::IsValidIPv4Address(const char* ipv4String)
+{
+	struct sockaddr_in sa;
+	int result;
+#if PLATFORM == PLATFORM_WINDOWS
+	result = InetPton(AF_INET, ipv4String, &(sa.sin_addr));
+#else
+	result = inet_pton(AF_INET, ipv4String, &(sa.sin_addr));
+#endif
+	return result != 0;
 }
 
 bool Tubes::GetHostFlag()
