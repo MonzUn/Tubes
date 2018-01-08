@@ -34,7 +34,8 @@ public:
 	bool					operator == ( const Connection& other ) const { return this->m_address == other.m_address && this->m_socket == other.m_socket; }
 	bool					operator != ( const Connection& other ) const { return this->m_address != other.m_address || this->m_socket != other.m_socket; }
 
-	const Address			GetAddress() const { return m_address; }
+	Address					GetAddress() const { return m_address; }
+	Port					GetPort() const { return m_port; }
 
 private:
 	

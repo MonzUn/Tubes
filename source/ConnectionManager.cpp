@@ -26,9 +26,49 @@ ConnectionManager::~ConnectionManager()
 
 void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator )
 {
-	for (auto& portAndListener : m_ListenerMap)
+	std::vector<std::pair<Connection*, ConnectionState>> newConnections;
+	for ( auto& portAndListener : m_ListenerMap )
 	{
-		portAndListener.second->FetchAcceptedConnections( m_UnverifiedConnections );
+		portAndListener.second->FetchAcceptedConnections( newConnections );
+	}
+
+	// Make sure that the new connection doesn't already exist // TODODB: Make this optional
+	for ( int i = 0; i < newConnections.size(); ++i )
+	{
+		bool duplicate = false;
+		Connection*& newConnection = newConnections[i].first;
+		for ( int j = 0; j < m_UnverifiedConnections.size(); ++j )
+		{
+			const Connection* existingConnection = m_UnverifiedConnections[j].first;
+			if ( newConnection->GetAddress() == existingConnection->GetAddress() && newConnection->GetPort() == existingConnection->GetPort() )
+			{
+				duplicate = true;
+				break;
+			}
+		}
+
+		if ( !duplicate )
+		{
+			for ( auto& idAndConnection : m_Connections )
+			{
+				const Connection* existingConnection = idAndConnection.second;
+				if ( newConnection->GetAddress() == existingConnection->GetAddress() && newConnection->GetPort() == existingConnection->GetPort() )
+				{
+					duplicate = true;
+					break;
+				}
+			}
+		}
+
+		if ( duplicate )
+		{
+			MLOG_WARNING("An incoming connection with destination " << TubesUtility::AddressToIPv4String( newConnection->GetAddress() ) << " was diesconnected since an identical connection already existed", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+			newConnection->Disconnect();
+			delete newConnection;
+			newConnection = nullptr;
+		}
+		else
+			m_UnverifiedConnections.push_back( newConnections[i] );
 	}
 
 	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i )
