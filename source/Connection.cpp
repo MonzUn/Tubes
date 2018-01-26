@@ -200,7 +200,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 	if (m_socket == INVALID_SOCKET)
 	{
 		MLOG_ERROR("Attempted to receive from invalid socket", TUBES_LOG_CATEGORY_CONNECTION);
-		return ReceiveResult::Error;;
+		return ReceiveResult::Error;
 	}
 
 	int32_t byteCountReceived;
