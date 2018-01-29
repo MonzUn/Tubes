@@ -36,19 +36,9 @@ find_path(MUtilityInclude MUtility/MUtilityByte.h PATHS ${IncludeDirectoryAbsolu
 set(MUtilityIncludes ${MUtilityInclude}/MUtility)
 
 set(MUtilityDebugLibraryDirectoryAbsolute "${DebugLibraryDirectoryAbsolute}/MUtility")
-find_library(MUtilityDebugLibrary
-	NAMES MUtility
-	PATHS ${MUtilityDebugLibraryDirectoryAbsolute})
-set(MUtilityDebugLibraries ${MUtilityDebugLibrary})
-
 set(MUtilityReleaseLibraryDirectoryAbsolute "${ReleaseLibraryDirectoryAbsolute}/MUtility")
-find_library(MUtilityReleaseLibrary
-	NAMES MUtility
-	PATHS ${MUtilityReleaseLibraryDirectoryAbsolute})
-set(MUtilityReleaseLibraries ${MUtilityReleaseLibrary})
 
 # Set include directories
-
 include_directories(
 	${MUtilityIncludes}
 )
@@ -66,14 +56,6 @@ ADD_LIBRARY( ${CMAKE_PROJECT_NAME} STATIC
 
 # Make sure that the linker language gets set to C++
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
-
-# Link debug libraries to the executable
-target_link_libraries(${CMAKE_PROJECT_NAME} debug ${MUtilityDebugLibraries}
-)
-
-# Link release libraries to the executable
-target_link_libraries(${CMAKE_PROJECT_NAME} optimized ${MUtilityReleaseLibraries}
-)
 
 # Get local(non versioned) paths to dependencies
 include("CMakeLocalDependenciesPaths.txt" OPTIONAL)
