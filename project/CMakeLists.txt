@@ -28,9 +28,6 @@ get_filename_component(DebugLibraryDirectoryAbsolute ${DebugLibraryDirectoryRela
 file(RELATIVE_PATH ReleaseLibraryDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/lib/release/x64)
 get_filename_component(ReleaseLibraryDirectoryAbsolute ${ReleaseLibraryDirectoryRelative} ABSOLUTE)
 
-# Set output directory
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ProjectRoot}/output/)
-
 # Find MUtility
 find_path(MUtilityInclude MUtility/MUtilityByte.h PATHS ${IncludeDirectoryAbsolute})
 set(MUtilityIncludes ${MUtilityInclude}/MUtility)
@@ -50,19 +47,31 @@ file(GLOB_RECURSE SOURCE_DIRECTORIES
 )
 
 # Create static library
-ADD_LIBRARY( ${CMAKE_PROJECT_NAME} STATIC
+ADD_LIBRARY( ${PROJECT_NAME} STATIC
    	${SOURCE_DIRECTORIES}
 )
 
-# Make sure that the linker language gets set to C++
-set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+# Set output directory
+set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ProjectRootAbsolute}/output/)
 
-# Get local(non versioned) paths to dependencies
-include("CMakeLocalDependenciesPaths.txt" OPTIONAL)
+# Make sure that the linker language gets set to C++
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+
+# ---------- Dependencies ----------
+
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+	# Get local(non versioned) paths to dependencies
+	include("${CMAKE_CURRENT_LIST_DIR}/CMakeLocalDependenciesPaths.txt" OPTIONAL)
+
+	# Run CMake of dependencies
+	if(MUtilityCMakePath)
+		add_subdirectory(${MUtilityCMakePath} "${MUtilityCMakePath}")
+	endif(MUtilityCMakePath)
+endif(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
 # Add prebuilds scripts that copies local dependencies to their place within the project
 if(MUtilityIncludeCopyPath)
-	add_custom_command(TARGET ${CMAKE_PROJECT_NAME}
+	add_custom_command(TARGET ${PROJECT_NAME}
 	PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${MUtilityIncludeCopyPath}
@@ -70,7 +79,7 @@ if(MUtilityIncludeCopyPath)
 endif(MUtilityIncludeCopyPath)
 
 if(MUtilityDebugLibCopyPath)
-	add_custom_command(TARGET ${CMAKE_PROJECT_NAME}
+	add_custom_command(TARGET ${PROJECT_NAME}
 	PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${MUtilityDebugLibCopyPath}
@@ -78,7 +87,7 @@ if(MUtilityDebugLibCopyPath)
 endif(MUtilityDebugLibCopyPath)
 
 if(MUtilityReleaseLibCopyPath)
-	add_custom_command(TARGET ${CMAKE_PROJECT_NAME}
+	add_custom_command(TARGET ${PROJECT_NAME}
 	PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${MUtilityReleaseLibCopyPath}
