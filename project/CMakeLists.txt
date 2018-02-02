@@ -59,40 +59,22 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
 # ---------- Dependencies ----------
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-	# Get local(non versioned) paths to dependencies
-	include("${CMAKE_CURRENT_LIST_DIR}/CMakeLocalDependenciesPaths.txt" OPTIONAL)
+# Get local(non versioned) paths to dependencies
+include("${CMAKE_CURRENT_LIST_DIR}/CMakeLocalDependenciesPaths.txt" OPTIONAL)
 
-	# Run CMake of dependencies
-	if(MUtilityCMakePath)
+if(MUtilityRootPath)
+	message("[${PROJECT_NAME}] - Found MUtility at path ${MUtilityRootPath}")
+	set(MUtilityCMakePath "${MUtilityRootPath}/project")
+	set(MUtilityIncludeCopyPath "${MUtilityRootPath}/source/interface")
+	set(MUtilityDebugLibCopyPath "${MUtilityRootPath}/output/Debug")
+	set(MUtilityReleaseLibCopyPath "${MUtilityRootPath}/output/Release")
+	add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${MUtilityIncludeCopyPath} ${MUtilityIncludes})
+	add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${MUtilityDebugLibCopyPath} ${MUtilityDebugLibraryDirectoryAbsolute})
+	add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${MUtilityReleaseLibCopyPath} ${MUtilityReleaseLibraryDirectoryAbsolute})
+	if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 		add_subdirectory(${MUtilityCMakePath} "${MUtilityCMakePath}")
-	endif(MUtilityCMakePath)
-endif(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-
-# Add prebuilds scripts that copies local dependencies to their place within the project
-if(MUtilityIncludeCopyPath)
-	add_custom_command(TARGET ${PROJECT_NAME}
-	PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${MUtilityIncludeCopyPath}
-        ${MUtilityIncludes})
-endif(MUtilityIncludeCopyPath)
-
-if(MUtilityDebugLibCopyPath)
-	add_custom_command(TARGET ${PROJECT_NAME}
-	PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${MUtilityDebugLibCopyPath}
-        ${MUtilityDebugLibraryDirectoryAbsolute})
-endif(MUtilityDebugLibCopyPath)
-
-if(MUtilityReleaseLibCopyPath)
-	add_custom_command(TARGET ${PROJECT_NAME}
-	PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${MUtilityReleaseLibCopyPath}
-        ${MUtilityReleaseLibraryDirectoryAbsolute})
-endif(MUtilityReleaseLibCopyPath)
+	endif(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+endif(MUtilityRootPath)
 
 # --- DEBUG COPY PASTE ---
 #message("|||--- TEST ---||| ${var}")
