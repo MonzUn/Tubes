@@ -209,23 +209,26 @@ void ConnectionManager::Disconnect( ConnectionID connectionID )
 
 void ConnectionManager::DisconnectAll()
 {
-	for ( auto& connectionAndState : m_UnverifiedConnections )
+	for (auto connectionAndState = m_UnverifiedConnections.cbegin(); connectionAndState != m_UnverifiedConnections.cend();)
 	{
-		connectionAndState.first->Disconnect();
-		MLOG_INFO( "An unverified connection with destination " + TubesUtility::AddressToIPv4String( connectionAndState.first->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		connectionAndState->first->Disconnect();
+		MLOG_INFO( "An unverified connection with destination " + TubesUtility::AddressToIPv4String( connectionAndState->first->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
 
-		delete connectionAndState.first;
+		delete connectionAndState->first;
 	}
 	m_UnverifiedConnections.clear();
 
-	for ( auto& idAndConnection : m_Connections )
+	for ( auto idAndConnection = m_Connections.cbegin(); idAndConnection != m_Connections.cend();)
 	{
-		idAndConnection.second->Disconnect();
-		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String( idAndConnection.second->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		ConnectionID connectionID = idAndConnection->first;
 
-		delete idAndConnection.second;
+		idAndConnection->second->Disconnect();
+		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String(idAndConnection->second->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
 
-		m_DisconnectionCallbacks.TriggerCallbacks( idAndConnection.first );
+		delete idAndConnection->second;
+		m_Connections.erase(idAndConnection++);
+
+		m_DisconnectionCallbacks.TriggerCallbacks(connectionID);
 	}
 	m_Connections.clear();
 }
