@@ -70,7 +70,10 @@ void Tubes::Shutdown()
 
 		delete m_ConnectionManager;
 
-		delete m_TubesMessageReplicator; // TODODB: Make a utility cleanup function for this
+		for (auto& IDAndReplicator : m_ReplicatorReferences)
+		{
+			delete IDAndReplicator.second;
+		}
 		m_ReplicatorReferences.clear();
 
 		for ( int i = 0; i < m_ReceivedTubesMessages.size(); ++i )
