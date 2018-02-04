@@ -29,8 +29,10 @@ file(RELATIVE_PATH ReleaseLibraryDirectoryRelative ${Tubes_SOURCE_DIR} ${Project
 get_filename_component(ReleaseLibraryDirectoryAbsolute ${ReleaseLibraryDirectoryRelative} ABSOLUTE)
 
 # Find MUtility
-find_path(MUtilityInclude MUtility/MUtilityByte.h PATHS ${IncludeDirectoryAbsolute})
-set(MUtilityIncludes ${MUtilityInclude}/MUtility)
+set(MUtilityIncludes ${IncludeDirectoryAbsolute}/MUtility)
+set(MUtilityDebugLibraryDirectoryAbsolute "${DebugLibraryDirectoryAbsolute}/MUtility")
+set(MUtilityReleaseLibraryDirectoryAbsolute "${ReleaseLibraryDirectoryAbsolute}/MUtility")
+message("[${PROJECT_NAME}] - Assuming MUtility includes are located at path ${MUtilityIncludes}")
 
 set(MUtilityDebugLibraryDirectoryAbsolute "${DebugLibraryDirectoryAbsolute}/MUtility")
 set(MUtilityReleaseLibraryDirectoryAbsolute "${ReleaseLibraryDirectoryAbsolute}/MUtility")
@@ -63,7 +65,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 include("${CMAKE_CURRENT_LIST_DIR}/CMakeLocalDependenciesPaths.txt" OPTIONAL)
 
 if(MUtilityRootPath)
-	message("[${PROJECT_NAME}] - Found MUtility at path ${MUtilityRootPath}")
+	message("[${PROJECT_NAME}] - Found MUtility project at path ${MUtilityRootPath}")
 	set(MUtilityCMakePath "${MUtilityRootPath}/project")
 	set(MUtilityIncludeCopyPath "${MUtilityRootPath}/source/interface")
 	set(MUtilityDebugLibCopyPath "${MUtilityRootPath}/output/Debug")
