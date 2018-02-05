@@ -37,8 +37,8 @@ message("[${PROJECT_NAME}] - Assuming MUtility includes are located at path ${MU
 set(MUtilityDebugLibraryDirectoryAbsolute "${DebugLibraryDirectoryAbsolute}/MUtility")
 set(MUtilityReleaseLibraryDirectoryAbsolute "${ReleaseLibraryDirectoryAbsolute}/MUtility")
 
-# Set include directories
-include_directories(
+# List include directories
+set(IncludeDirectoryList
 	${MUtilityIncludes}
 )
 
@@ -52,6 +52,9 @@ file(GLOB_RECURSE SOURCE_DIRECTORIES
 ADD_LIBRARY( ${PROJECT_NAME} STATIC
    	${SOURCE_DIRECTORIES}
 )
+
+# Set include directories
+set_property(TARGET ${PROJECT_NAME} PROPERTY INCLUDE_DIRECTORIES ${IncludeDirectoryList})
 
 # Set output directory
 set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ProjectRootAbsolute}/output/)
