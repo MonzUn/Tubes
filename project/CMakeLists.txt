@@ -77,7 +77,7 @@ if(MUtilityRootPath)
 	add_custom_command(TARGET ${PROJECT_NAME} PRE_LINK COMMAND ${CMAKE_COMMAND} -E copy_directory ${MUtilityDebugLibCopyPath} ${MUtilityDebugLibraryDirectoryAbsolute})
 	add_custom_command(TARGET ${PROJECT_NAME} PRE_LINK COMMAND ${CMAKE_COMMAND} -E copy_directory ${MUtilityReleaseLibCopyPath} ${MUtilityReleaseLibraryDirectoryAbsolute})
 	if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-		add_subdirectory(${MUtilityCMakePath} "${MUtilityCMakePath}")
+		add_subdirectory(${MUtilityCMakePath} ${MUtilityCMakePath})
 	endif(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif(MUtilityRootPath)
 
