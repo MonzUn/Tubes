@@ -3,7 +3,7 @@
 
 #define INVALID_CONNECTION_ID -1
 
-namespace Tubes
+namespace Tubes // TODODB: Replace the callback handles so that Tubes dopesn't rely on external code for this
 {
 	typedef int32_t	ConnectionID;
 

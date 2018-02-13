@@ -23,7 +23,7 @@ namespace Tubes
 
 	void RegisterReplicator( MessageReplicator* replicator );
 
-	ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction );
+	ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction ); // TODODB: Make a generic function for registering and unregistering all callbacks
 	bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
 	DisconnectionCallbackHandle RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction );
 	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );

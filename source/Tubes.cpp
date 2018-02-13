@@ -288,37 +288,58 @@ void Tubes::StopAllListeners()
 
 void Tubes::Disconnect( ConnectionID connectionID )
 {
-	m_ConnectionManager->Disconnect(connectionID);
+	if( m_Initialized )
+		m_ConnectionManager->Disconnect( connectionID );
 }
 
 void Tubes::DisconnectAll()
 {
-	m_ConnectionManager->DisconnectAll();
+	if( m_Initialized )
+		m_ConnectionManager->DisconnectAll();
 }
 
 void Tubes::RegisterReplicator( MessageReplicator* replicator ) // TODODB: Add unregistration function
 {
-	m_ReplicatorReferences.emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
+	if ( m_Initialized )
+		m_ReplicatorReferences.emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
+	else
+		MLOG_WARNING( "Attempted to register replicator although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
 }
 
 ConnectionCallbackHandle Tubes::RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction )
 {
-	return m_ConnectionManager->RegisterConnectionCallback( callbackFunction );
+	ConnectionCallbackHandle toReturn;
+	if (m_Initialized)
+		toReturn = m_ConnectionManager->RegisterConnectionCallback(callbackFunction);
+	else
+		MLOG_WARNING( "Attempted to register callback although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
+	return toReturn;
 }
 
 bool Tubes::UnregisterConnectionCallback( ConnectionCallbackHandle handle )
 {
-	return m_ConnectionManager->UnregisterConnectionCallback( handle );
+	if(m_Initialized)
+		return m_ConnectionManager->UnregisterConnectionCallback( handle );
+
+	return false;
 }
 
 DisconnectionCallbackHandle Tubes::RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction )
 {
-	return m_ConnectionManager->RegisterDisconnectionCallback( callbackFunction );
+	DisconnectionCallbackHandle toReturn;
+	if (m_Initialized)
+		toReturn = m_ConnectionManager->RegisterDisconnectionCallback(callbackFunction);
+	else
+		MLOG_WARNING("Attempted to register callback although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL);
+	return toReturn;
 }
 
 bool Tubes::UnregisterDisconnectionCallback(DisconnectionCallbackHandle handle)
 {
-	return m_ConnectionManager->UnregisterDisconnectionCallback( handle );
+	if(m_Initialized)
+		return m_ConnectionManager->UnregisterDisconnectionCallback( handle );
+
+	return false;
 }
 
 bool Tubes::IsValidIPv4Address(const char* ipv4String)
