@@ -50,7 +50,7 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageS
 
 		default:
 		{
-			MLOG_ERROR( "Failed to find serialization logic for message of type " << message->Type, TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
+			MLOG_WARNING( "Failed to find serialization logic for message of type " << message->Type <<"; the message will not be sent", TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 			if ( optionalWritingBuffer == nullptr ) // Only free the memory buffer if it wasn't supplied as a parameter
 				free( serializedMessage );
 
@@ -99,7 +99,7 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer )
 
 		default:
 		{
-			MLOG_ERROR( "Failed to find deserialization logic for message of type " << deserializedMessage->Type, TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
+			MLOG_WARNING( "Failed to find deserialization logic for message of type " << deserializedMessage->Type << "; the message will be dropped", TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 			deserializedMessage = nullptr;
 		} break;
 	}
@@ -137,7 +137,7 @@ int32_t TubesMessageReplicator::CalculateMessageSize( const Message& message ) c
 
 		default:
 		{
-			MLOG_ERROR( "Failed to find size calculation logic for message of type " << message.Type, TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
+			MLOG_WARNING( "Failed to find size calculation logic for message of type " << message.Type, TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
 			messageSize = 0;
 		} break;
 	}

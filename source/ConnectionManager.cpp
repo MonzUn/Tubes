@@ -276,7 +276,7 @@ void ConnectionManager::Connect( const std::string& address, Port port ) // TODO
 	Socket connectionSocket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Adress Family = INET and the protocol to be used is TCP
 	if ( connectionSocket <= 0 )
 	{
-		MLOG_ERROR( "Failed to create socket", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		LogAPIErrorMessage( "Failed to create socket", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
 		return;
 	}
 
