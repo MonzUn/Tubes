@@ -21,10 +21,10 @@
 
 ConnectionManager*	m_ConnectionManager; // TODODB: Create an internal header to structure these variables and functions
 
-std::unordered_map<ReplicatorID, MessageReplicator*>	m_ReplicatorReferences;
+std::unordered_map<ReplicatorID, MessageReplicator*>*	m_ReplicatorReferences;
 TubesMessageReplicator*									m_TubesMessageReplicator;
 
-std::vector<TubesMessage*> m_ReceivedTubesMessages;
+std::vector<TubesMessage*>* m_ReceivedTubesMessages;
 
 bool m_Initialized = false;
 
@@ -32,6 +32,9 @@ bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the isnta
 { 
 	if ( !m_Initialized )
 	{
+		m_ReplicatorReferences = new std::unordered_map<ReplicatorID, MessageReplicator*>();
+		m_ReceivedTubesMessages = new std::vector<TubesMessage*>();
+
 #if PLATFORM == PLATFORM_WINDOWS
 		WSADATA wsaData;
 		m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
@@ -45,7 +48,7 @@ bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the isnta
 		{
 			m_ConnectionManager = new ConnectionManager;
 			m_TubesMessageReplicator = new TubesMessageReplicator;
-			m_ReplicatorReferences.emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
+			m_ReplicatorReferences->emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
 
 			MLOG_INFO( "Tubes initialized successfully", TUBES_LOG_CATEGORY_GENERAL );
 		}
@@ -69,17 +72,19 @@ void Tubes::Shutdown()
 
 		delete m_ConnectionManager;
 
-		for (auto& IDAndReplicator : m_ReplicatorReferences)
+		for (auto& IDAndReplicator : *m_ReplicatorReferences)
 		{
 			delete IDAndReplicator.second;
 		}
-		m_ReplicatorReferences.clear();
+		m_ReplicatorReferences->clear();
+		delete m_ReplicatorReferences;
 
-		for ( int i = 0; i < m_ReceivedTubesMessages.size(); ++i )
+		for ( int i = 0; i < m_ReceivedTubesMessages->size(); ++i )
 		{
-			free( m_ReceivedTubesMessages[i] );
+			free( (*m_ReceivedTubesMessages)[i] );
 		}
-		m_ReceivedTubesMessages.clear();
+		m_ReceivedTubesMessages->clear();
+		delete m_ReceivedTubesMessages;
 
 		MLOG_INFO( "Tubes has been shut down", TUBES_LOG_CATEGORY_GENERAL );
 	}
@@ -123,9 +128,10 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 		Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
 		if ( connection != nullptr )
 		{
-			if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() )
+			auto& idAndConnectionIterator = m_ReplicatorReferences->find(message->Replicator_ID);
+			if (idAndConnectionIterator != m_ReplicatorReferences->end() )
 			{
-				SendResult result = connection->SerializeAndSendMessage( *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+				SendResult result = connection->SerializeAndSendMessage( *message, *idAndConnectionIterator->second);
 				switch ( result )
 				{
 					case SendResult::Disconnect:
@@ -154,7 +160,8 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 {
 	if ( m_Initialized )
 	{
-		if ( m_ReplicatorReferences.find( message->Replicator_ID ) != m_ReplicatorReferences.end() )
+		auto& idAndReplicatorIterator = m_ReplicatorReferences->find(message->Replicator_ID);
+		if (idAndReplicatorIterator != m_ReplicatorReferences->end() )
 		{
 			const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 
@@ -177,7 +184,7 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 			{
 				if ( idAndConnection.first != exception )
 				{	
-					SendResult result = idAndConnection.second->SerializeAndSendMessage( *message, *m_ReplicatorReferences.at( message->Replicator_ID ) );
+					SendResult result = idAndConnection.second->SerializeAndSendMessage( *message, *idAndReplicatorIterator->second);
 					switch ( result )
 					{
 						case SendResult::Disconnect:
@@ -219,14 +226,14 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 			ReceiveResult result;
 			do
 			{
-				result = idAndConnection.second->Receive( m_ReplicatorReferences, message );
+				result = idAndConnection.second->Receive( *m_ReplicatorReferences, message );
 				switch ( result )
 				{
 					case ReceiveResult::Fullmessage:
 					{
 						if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID )
 						{
-							m_ReceivedTubesMessages.push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
+							m_ReceivedTubesMessages->push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
 						}
 						else
 						{
@@ -300,7 +307,7 @@ void Tubes::DisconnectAll()
 void Tubes::RegisterReplicator( MessageReplicator* replicator ) // TODODB: Add unregistration function
 {
 	if ( m_Initialized )
-		m_ReplicatorReferences.emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
+		m_ReplicatorReferences->emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
 	else
 		MLOG_WARNING( "Attempted to register replicator although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
 }

@@ -27,7 +27,7 @@ ConnectionManager::~ConnectionManager()
 void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator )
 {
 	std::vector<std::pair<Connection*, ConnectionState>> newConnections;
-	for ( auto& portAndListener : m_ListenerMap )
+	for ( const auto& portAndListener : m_ListenerMap )
 	{
 		portAndListener.second->FetchAcceptedConnections( newConnections );
 	}
@@ -49,7 +49,7 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 
 		if ( !duplicate )
 		{
-			for ( auto& idAndConnection : m_Connections )
+			for ( const auto& idAndConnection : m_Connections )
 			{
 				const Connection* existingConnection = idAndConnection.second;
 				if ( newConnection->GetAddress() == existingConnection->GetAddress() && newConnection->GetPort() == existingConnection->GetPort() )
@@ -179,7 +179,7 @@ void ConnectionManager::RequestConnection( const std::string& address, Port port
 
 void ConnectionManager::Disconnect( ConnectionID connectionID )
 {
-	auto connectionIterator = m_Connections.find( connectionID );
+	auto& connectionIterator = m_Connections.find( connectionID );
 	if ( connectionIterator != m_Connections.end() )
 	{
 		Connection* connection = m_Connections.at( connectionID );
@@ -197,7 +197,7 @@ void ConnectionManager::Disconnect( ConnectionID connectionID )
 
 void ConnectionManager::DisconnectAll()
 {
-	for (auto connectionAndState = m_UnverifiedConnections.cbegin(); connectionAndState != m_UnverifiedConnections.cend();)
+	for (auto& connectionAndState = m_UnverifiedConnections.cbegin(); connectionAndState != m_UnverifiedConnections.cend();)
 	{
 		connectionAndState->first->Disconnect();
 		MLOG_INFO( "An unverified connection with destination " + TubesUtility::AddressToIPv4String( connectionAndState->first->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
@@ -206,7 +206,7 @@ void ConnectionManager::DisconnectAll()
 	}
 	m_UnverifiedConnections.clear();
 
-	for ( auto idAndConnection = m_Connections.cbegin(); idAndConnection != m_Connections.cend();)
+	for ( auto& idAndConnection = m_Connections.cbegin(); idAndConnection != m_Connections.cend();)
 	{
 		ConnectionID connectionID = idAndConnection->first;
 
@@ -230,7 +230,7 @@ void ConnectionManager::StartListener( Port port ) // TODODB: Add check against 
 
 void ConnectionManager::StopAllListeners()
 {
-	for ( auto portListener : m_ListenerMap )
+	for ( auto&& portListener : m_ListenerMap )
 	{
 		portListener.second->StopListening();
 		delete portListener.second;
