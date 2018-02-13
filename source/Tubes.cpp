@@ -27,7 +27,6 @@ TubesMessageReplicator*									m_TubesMessageReplicator;
 std::vector<TubesMessage*> m_ReceivedTubesMessages;
 
 bool m_Initialized = false;
-bool m_HostFlag = false;
 
 bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the isntance is already initialized
 { 
@@ -94,7 +93,7 @@ void Tubes::Update()
 {
 	if ( m_Initialized )
 	{
-		m_ConnectionManager->VerifyNewConnections( m_HostFlag, *m_TubesMessageReplicator );
+		m_ConnectionManager->VerifyNewConnections( *m_TubesMessageReplicator );
 
 		// Send queued messages
 		std::vector<ConnectionID> toDisconnect;
@@ -352,14 +351,4 @@ bool Tubes::IsValidIPv4Address(const char* ipv4String)
 	result = inet_pton(AF_INET, ipv4String, &(sa.sin_addr));
 #endif
 	return result != 0;
-}
-
-bool Tubes::GetHostFlag()
-{
-	return m_HostFlag;
-}
-
-void Tubes::SetHostFlag( bool newHostFlag )
-{
-	m_HostFlag = newHostFlag;
 }

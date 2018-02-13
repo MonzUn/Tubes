@@ -15,7 +15,7 @@ class ConnectionManager
 public:
 	~ConnectionManager();
 
-	void		VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator );
+	void		VerifyNewConnections( TubesMessageReplicator& replicator );
 
 	void		RequestConnection( const std::string& address, Port port );
 	void		Disconnect( ConnectionID connectionID );

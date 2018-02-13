@@ -24,7 +24,7 @@ ConnectionManager::~ConnectionManager()
 	DisconnectAll();
 }
 
-void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicator& replicator )
+void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator )
 {
 	std::vector<std::pair<Connection*, ConnectionState>> newConnections;
 	for ( auto& portAndListener : m_ListenerMap )
@@ -91,90 +91,78 @@ void ConnectionManager::VerifyNewConnections( bool isHost, TubesMessageReplicato
 		switch ( m_UnverifiedConnections[i].second )
 		{
 			case ConnectionState::NewIncoming: // TODODB: Implement logic for checking so that the remote client really is a tubes client
-				if ( isHost )
+			{
+				ConnectionID connectionID = m_NextConnectionID++;
+				ConnectionIDMessage idMessage = ConnectionIDMessage(connectionID);
+				SendResult result = connection->SerializeAndSendMessage(idMessage, replicator);
+				switch (result)
 				{
-					ConnectionID connectionID = m_NextConnectionID++;
-					ConnectionIDMessage idMessage = ConnectionIDMessage( connectionID );
-					SendResult result = connection->SerializeAndSendMessage( idMessage, replicator );
-					switch ( result )
-					{
-						case SendResult::Disconnect:
-						{
-							connection->Disconnect();
-							delete connection;
-							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i );
-							--i;
-						} break;
-
-						case SendResult::Sent:
-						case SendResult::Queued:
-						case SendResult::Error:
-						default:
-							break;
-					}
-
-					m_Connections.emplace( connectionID, connection);
-					m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
-
-					MLOG_INFO( "An incoming connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( connectionID)->GetAddress() ) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
-					m_ConnectionCallbacks.TriggerCallbacks( idMessage.ID );
-				}
-				else
+				case SendResult::Disconnect:
 				{
-					assert( false && "TUBES: Received incoming connection while in client mode" );
+					connection->Disconnect();
+					delete connection;
+					m_UnverifiedConnections.erase(m_UnverifiedConnections.begin() + i);
+					--i;
+				} break;
+
+				case SendResult::Sent:
+				case SendResult::Queued:
+				case SendResult::Error:
+				default:
+					break;
 				}
-				break;
+
+				m_Connections.emplace(connectionID, connection);
+				m_UnverifiedConnections.erase(m_UnverifiedConnections.begin() + i--);
+
+				MLOG_INFO("An incoming connection with destination " + TubesUtility::AddressToIPv4String(m_Connections.at(connectionID)->GetAddress()) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+				m_ConnectionCallbacks.TriggerCallbacks(idMessage.ID);
+			} break;
 
 			case ConnectionState::NewOutgoing:
-				if ( !isHost )
+			{
+				Message* message = nullptr;
+				ReceiveResult result;
+				result = connection->Receive( replicatorMap, message );
+				switch( result )
 				{
-					Message* message = nullptr;
-					ReceiveResult result;
-					result = connection->Receive( replicatorMap, message );
-					switch( result )
+					case ReceiveResult::Fullmessage:
 					{
-						case ReceiveResult::Fullmessage:
+						if ( message->Type == TubesMessages::CONNECTION_ID )
 						{
-							if ( message->Type == TubesMessages::CONNECTION_ID )
-							{
-								ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( message );
+							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( message );
 
-								m_Connections.emplace( idMessage->ID, connection);
-								m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
-
-								MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->GetAddress() ) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
-								m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
-								free( message );
-							}
-							else
-							{
-								MLOG_WARNING( "Received an unexpected message type while verifying socket; message type = " << message->Type, TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
-								free( message );
-							}
-						} break;
-
-						case ReceiveResult::GracefulDisconnect:
-						case ReceiveResult::ForcefulDisconnect:
-						{
-							MLOG_INFO( "An unverified outgoing connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " was disconnected during handshake", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
-
-							connection->Disconnect();
-							delete connection;
+							m_Connections.emplace( idMessage->ID, connection);
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
-						} break;
 
-						case ReceiveResult::Empty:
-						case ReceiveResult::PartialMessage:
-						case ReceiveResult::Error:
-						default:
-							break;
-					} 
-				}
-				else
-				{
-					assert( false && "TUBES: Attempted to initiate connection while in host mode" );
-				}
-				break;
+							MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->GetAddress() ) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+							m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
+							free( message );
+						}
+						else
+						{
+							MLOG_WARNING( "Received an unexpected message type while verifying socket; message type = " << message->Type, TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+							free( message );
+						}
+					} break;
+
+					case ReceiveResult::GracefulDisconnect:
+					case ReceiveResult::ForcefulDisconnect:
+					{
+						MLOG_INFO( "An unverified outgoing connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " was disconnected during handshake", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+
+						connection->Disconnect();
+						delete connection;
+						m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+					} break;
+
+					case ReceiveResult::Empty:
+					case ReceiveResult::PartialMessage:
+					case ReceiveResult::Error:
+					default:
+						break;
+				} 
+			} break;
 
 			default:
 				assert( false && "TUBES: A connection is in an unhandled connection state" );
