@@ -9,8 +9,8 @@ class MessageReplicator
 public:
 							MessageReplicator( ReplicatorID id );
 
-	virtual Byte*			SerializeMessage( const Message* message, MessageSize* outMessageSize = nullptr, Byte* optionalWritingBuffer = nullptr ) = 0;
-	virtual Message*		DeserializeMessage( const Byte* const buffer ) = 0; // TODODB: Return how many bytes were read instead // TODODB: Take optionalwritingbuffer as parameter
+	virtual MUtility::Byte*	SerializeMessage( const Message* message, MessageSize* outMessageSize = nullptr, MUtility::Byte* optionalWritingBuffer = nullptr ) = 0;
+	virtual Message*		DeserializeMessage( const MUtility::Byte* const buffer ) = 0; // TODODB: Return how many bytes were read instead // TODODB: Take optionalwritingbuffer as parameter
 	virtual MessageSize		CalculateMessageSize( const Message& message ) const = 0;
 	
 	ReplicatorID		GetID() const;
@@ -38,8 +38,8 @@ public:
 	void				ReadString(					std::string&	value  );
 
 protected:
-	Byte*		m_WritingWalker		= nullptr;
-	const Byte* m_ReadingWalker		= nullptr;
+	MUtility::Byte*		m_WritingWalker		= nullptr;
+	const MUtility::Byte* m_ReadingWalker		= nullptr;
 
 private:
 	ReplicatorID m_ID;

@@ -32,8 +32,8 @@ struct ReceiveBuffer
 	ReceiveBuffer();
 	~ReceiveBuffer();
 
-	int16_t		ExpectedHeaderBytes;	// How many more bytes of header we expect for the current packet
-	MessageSize ExpectedPayloadBytes;	// How many more bytes of payload we expect for the current packet
-	Byte*		PayloadData;			// Dynamic buffer for packet payload
-	Byte*		Walker;					// Pointer to where the next recv should write to
+	int16_t				ExpectedHeaderBytes;	// How many more bytes of header we expect for the current packet
+	MessageSize			ExpectedPayloadBytes;	// How many more bytes of payload we expect for the current packet
+	MUtility::Byte*		PayloadData;			// Dynamic buffer for packet payload
+	MUtility::Byte*		Walker;					// Pointer to where the next recv should write to
 };

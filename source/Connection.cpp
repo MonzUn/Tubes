@@ -30,6 +30,7 @@
 #endif
 
 using namespace TubesUtility;
+using MUtility::Byte;
 
 // ---------- PUBLIC ----------
 

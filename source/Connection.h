@@ -39,7 +39,7 @@ public:
 
 private:
 	
-	SendResult				SendSerializedMessage(Byte* serializedMessage, MessageSize messageSize);
+	SendResult				SendSerializedMessage(MUtility::Byte* serializedMessage, MessageSize messageSize);
 
 	Socket					m_socket;
 	Address					m_address;
@@ -47,7 +47,7 @@ private:
 	struct sockaddr_in		m_sockaddr;
 	ReceiveBuffer			m_receiveBuffer;
 
-	std::queue<std::pair<Byte*, MessageSize>> unsentMessages; // TODODB: Create struct holding Byte* and Messagesize to get rid of code like".front().first"
+	std::queue<std::pair<MUtility::Byte*, MessageSize>> unsentMessages; // TODODB: Create struct holding Byte* and Messagesize to get rid of code like".front().first"
 };
 
 enum class SendResult

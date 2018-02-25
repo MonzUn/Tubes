@@ -11,6 +11,7 @@ using namespace MUtilitySerialization;
 using namespace TubesMessages;
 
 using Tubes::ConnectionID;
+using MUtility::Byte;
 
 #define TUBES_LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR "TubesMessageReplicator"
 

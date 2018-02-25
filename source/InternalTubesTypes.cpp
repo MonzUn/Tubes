@@ -7,7 +7,7 @@ ReceiveBuffer::ReceiveBuffer()
 	ExpectedHeaderBytes		= sizeof( MessageSize );
 	ExpectedPayloadBytes	= NOT_EXPECTING_PAYLOAD;
 	PayloadData				= nullptr;
-	Walker					= reinterpret_cast<Byte*>( &ExpectedPayloadBytes );
+	Walker					= reinterpret_cast<MUtility::Byte*>( &ExpectedPayloadBytes );
 }
 
 ReceiveBuffer::~ReceiveBuffer()
