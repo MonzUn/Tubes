@@ -17,7 +17,7 @@
 	#include <fcntl.h>
 #endif
 
-#define TUBES_LOG_CATEGORY_GENERAL "Tubes"
+#define LOG_CATEGORY_GENERAL "Tubes"
 
 namespace Tubes
 {
@@ -42,7 +42,7 @@ bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the insta
 		WSADATA wsaData;
 		m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
 		if ( !m_Initialized )
-			LogAPIErrorMessage( "Failed to initialize Tubes since WSAStartup failed", TUBES_LOG_CATEGORY_GENERAL );
+			LogAPIErrorMessage( "Failed to initialize Tubes since WSAStartup failed", LOG_CATEGORY_GENERAL );
 #else 
 		m_Initialized = true;
 #endif
@@ -53,11 +53,11 @@ bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the insta
 			m_TubesMessageReplicator = new TubesMessageReplicator;
 			m_ReplicatorReferences->emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
 
-			MLOG_INFO( "Tubes initialized successfully", TUBES_LOG_CATEGORY_GENERAL );
+			MLOG_INFO( "Tubes initialized successfully", LOG_CATEGORY_GENERAL );
 		}
 	}
 	else
-		MLOG_WARNING( "Attempted to initialize an already initialized instance of Tubes", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to initialize an already initialized instance of Tubes", LOG_CATEGORY_GENERAL );
 
 	return m_Initialized;
 }
@@ -89,10 +89,10 @@ void Tubes::Shutdown()
 		m_ReceivedTubesMessages->clear();
 		delete m_ReceivedTubesMessages;
 
-		MLOG_INFO( "Tubes has been shut down", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_INFO( "Tubes has been shut down", LOG_CATEGORY_GENERAL );
 	}
 	else
-		MLOG_WARNING( "Attempted to shut down uninitialized isntance of Tubes", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to shut down uninitialized isntance of Tubes", LOG_CATEGORY_GENERAL );
 
 	m_Initialized = false;
 }
@@ -121,7 +121,7 @@ void Tubes::Update()
 		}
 	}
 	else
-		MLOG_WARNING( "Attempted to update uninitialized instance of Tubes", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to update uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
 }
 
 void Tubes::SendToConnection( const Message* message, ConnectionID destinationConnectionID )
@@ -150,13 +150,13 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 				}
 			}
 			else
-				MLOG_WARNING( "Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, TUBES_LOG_CATEGORY_GENERAL );
+				MLOG_WARNING( "Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL );
 		}
 		else
-			MLOG_WARNING( "Failed to find requested connection while sending (Requested ID = " << destinationConnectionID + " )", TUBES_LOG_CATEGORY_GENERAL);
+			MLOG_WARNING( "Failed to find requested connection while sending (Requested ID = " << destinationConnectionID + " )", LOG_CATEGORY_GENERAL);
 	}
 	else
-		MLOG_WARNING( "Attempted to send using an uninitialized instance of Tubes", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to send using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
 }
 
 void Tubes::SendToAll( const Message* message, ConnectionID exception )
@@ -179,7 +179,7 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 				}
 
 				if ( !exceptionExists )
-					MLOG_WARNING( "The excepted connectionID supplied to SendToAll does not exist", TUBES_LOG_CATEGORY_GENERAL );
+					MLOG_WARNING( "The excepted connectionID supplied to SendToAll does not exist", LOG_CATEGORY_GENERAL );
 			}
 #endif
 			std::vector<ConnectionID> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
@@ -210,10 +210,10 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 			}
 		}
 		else
-			MLOG_WARNING("Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, TUBES_LOG_CATEGORY_GENERAL);
+			MLOG_WARNING("Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL);
 	}
 	else
-		MLOG_WARNING( "Attempted to send using an uninitialized instance of Tubes", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to send using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
 }
 
 void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionID>* outSenderIDs )
@@ -268,7 +268,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 		}
 	}
 	else
-		MLOG_WARNING( "Attempted to receive using an uninitialized instance of Tubes", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to receive using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
 }
 
 void Tubes::RequestConnection( const std::string& address, uint16_t port )
@@ -276,7 +276,7 @@ void Tubes::RequestConnection( const std::string& address, uint16_t port )
 	if ( m_Initialized )
 		m_ConnectionManager->RequestConnection( address, port );
 	else
-		MLOG_WARNING( "Attempted to request a connection although the Tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to request a connection although the Tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
 }
 
 void Tubes::StartListener( uint16_t port )
@@ -284,7 +284,7 @@ void Tubes::StartListener( uint16_t port )
 	if ( m_Initialized )
 		m_ConnectionManager->StartListener( port );
 	else
-		MLOG_WARNING( "Attempted to start listening on port " << port + " although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to start listening on port " << port + " although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
 }
 
 void Tubes::StopAllListeners()
@@ -292,7 +292,7 @@ void Tubes::StopAllListeners()
 	if ( m_Initialized )
 		m_ConnectionManager->StopAllListeners();
 	else
-		MLOG_WARNING( "Attempted to stop all listeners although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to stop all listeners although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
 }
 
 void Tubes::Disconnect( ConnectionID connectionID )
@@ -312,7 +312,7 @@ void Tubes::RegisterReplicator( MessageReplicator* replicator ) // TODODB: Add u
 	if ( m_Initialized )
 		m_ReplicatorReferences->emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
 	else
-		MLOG_WARNING( "Attempted to register replicator although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to register replicator although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
 }
 
 ConnectionCallbackHandle Tubes::RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction )
@@ -321,7 +321,7 @@ ConnectionCallbackHandle Tubes::RegisterConnectionCallback( ConnectionCallbackFu
 	if (m_Initialized)
 		toReturn = m_ConnectionManager->RegisterConnectionCallback(callbackFunction);
 	else
-		MLOG_WARNING( "Attempted to register callback although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL );
+		MLOG_WARNING( "Attempted to register callback although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
 	return toReturn;
 }
 
@@ -339,7 +339,7 @@ DisconnectionCallbackHandle Tubes::RegisterDisconnectionCallback( DisconnectionC
 	if (m_Initialized)
 		toReturn = m_ConnectionManager->RegisterDisconnectionCallback(callbackFunction);
 	else
-		MLOG_WARNING("Attempted to register callback although the tubes instance is uninitialized", TUBES_LOG_CATEGORY_GENERAL);
+		MLOG_WARNING("Attempted to register callback although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
 	return toReturn;
 }
 

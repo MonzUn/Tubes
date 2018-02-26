@@ -5,7 +5,7 @@
 #include <MUtilityLog.h>
 #include <MUtilityThreading.h>
 
-#define MUTILITY_LOG_CATEGORY_MESSAGE_MANAGER "MessageManager"
+#define LOG_CATEGORY_MESSAGE_MANAGER "MessageManager"
 
 using namespace MUtilityThreading;
 
@@ -54,7 +54,7 @@ bool MessageManager::RegisterSubscriber( Subscriber* subscriberToRegister )
 		if ( *m_Subscribers[i] == *subscriberToRegister ) // Check for duplicates
 		{
 			result = false;
-			MLOG_WARNING("Attempted to register already registered subscriber \"" + subscriberToRegister->GetNameAsSubscriber() + "\"", MUTILITY_LOG_CATEGORY_MESSAGE_MANAGER);
+			MLOG_WARNING("Attempted to register already registered subscriber \"" + subscriberToRegister->GetNameAsSubscriber() + "\"", LOG_CATEGORY_MESSAGE_MANAGER);
 			break;
 		}
 	}
@@ -89,7 +89,7 @@ bool MessageManager::UnregisterSubscriber( const Subscriber* const subscriberToU
 	UnlockMutexes( { &m_SubscriberLock, &m_UserMsgQueueLock, &m_SimMsgQueueLock } );
 
 	if ( !wasUnregistered )
-		MLOG_WARNING("Attempted to unregister a non registered subscriber \"" + subscriberToUnregister->GetNameAsSubscriber() + "\"", MUTILITY_LOG_CATEGORY_MESSAGE_MANAGER);
+		MLOG_WARNING("Attempted to unregister a non registered subscriber \"" + subscriberToUnregister->GetNameAsSubscriber() + "\"", LOG_CATEGORY_MESSAGE_MANAGER);
 
 	return wasUnregistered;
 }

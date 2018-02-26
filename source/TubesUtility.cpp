@@ -1,7 +1,7 @@
 #include "TubesUtility.h"
 #include <sstream>
 
-#define TUBES_LOG_CATEGORY_UTILITY "TubesUtility"
+#define LOG_CATEGORY_UTILITY "TubesUtility"
 
 std::string TubesUtility::GetErrorName( int errorCode ) // TODODB: See if the windows part can be cleaned up
 { 
@@ -59,7 +59,7 @@ void TubesUtility::ShutdownAndCloseSocket( Socket& socket )
 	result = shutdown( socket, SHUT_RDWR );
 #endif
 	if ( result != 0 )
-		LogAPIErrorMessage( "Failed to shut down socket", TUBES_LOG_CATEGORY_UTILITY );
+		LogAPIErrorMessage( "Failed to shut down socket", LOG_CATEGORY_UTILITY );
 
 	CloseSocket( socket );
 }
@@ -73,7 +73,7 @@ void TubesUtility::CloseSocket( Socket& socket )
 	result = close( socket );
 #endif
 	if ( result != 0 )
-		LogAPIErrorMessage( "Failed to close socket", TUBES_LOG_CATEGORY_UTILITY );
+		LogAPIErrorMessage( "Failed to close socket", LOG_CATEGORY_UTILITY );
 
 	socket = INVALID_SOCKET;
 }

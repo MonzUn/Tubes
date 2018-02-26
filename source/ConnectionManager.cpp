@@ -15,7 +15,7 @@
 #include <unistd.h>
 #endif
 
-#define TUBES_LOG_CATEGORY_CONNECTION_MANAGER "TubesConnectionManager"
+#define LOG_CATEGORY_CONNECTION_MANAGER "TubesConnectionManager"
 
 using namespace TubesUtility;
 
@@ -62,7 +62,7 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 
 		if ( duplicate )
 		{
-			MLOG_WARNING("An incoming connection with destination " << TubesUtility::AddressToIPv4String( newConnection->GetAddress() ) << " was diesconnected since an identical connection already existed", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+			MLOG_WARNING("An incoming connection with destination " << TubesUtility::AddressToIPv4String( newConnection->GetAddress() ) << " was diesconnected since an identical connection already existed", LOG_CATEGORY_CONNECTION_MANAGER);
 			newConnection->Disconnect();
 			delete newConnection;
 			newConnection = nullptr;
@@ -115,7 +115,7 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 				m_Connections.emplace(connectionID, connection);
 				m_UnverifiedConnections.erase(m_UnverifiedConnections.begin() + i--);
 
-				MLOG_INFO("An incoming connection with destination " + TubesUtility::AddressToIPv4String(m_Connections.at(connectionID)->GetAddress()) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+				MLOG_INFO("An incoming connection with destination " + TubesUtility::AddressToIPv4String(m_Connections.at(connectionID)->GetAddress()) + " was accepted", LOG_CATEGORY_CONNECTION_MANAGER);
 				m_ConnectionCallbacks.TriggerCallbacks(idMessage.ID);
 			} break;
 
@@ -135,13 +135,13 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 							m_Connections.emplace( idMessage->ID, connection);
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
 
-							MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->GetAddress() ) + " was accepted", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+							MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->GetAddress() ) + " was accepted", LOG_CATEGORY_CONNECTION_MANAGER);
 							m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
 							free( message );
 						}
 						else
 						{
-							MLOG_WARNING( "Received an unexpected message type while verifying socket; message type = " << message->Type, TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+							MLOG_WARNING( "Received an unexpected message type while verifying socket; message type = " << message->Type, LOG_CATEGORY_CONNECTION_MANAGER);
 							free( message );
 						}
 					} break;
@@ -149,7 +149,7 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 					case ReceiveResult::GracefulDisconnect:
 					case ReceiveResult::ForcefulDisconnect:
 					{
-						MLOG_INFO( "An unverified outgoing connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " was disconnected during handshake", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+						MLOG_INFO( "An unverified outgoing connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " was disconnected during handshake", LOG_CATEGORY_CONNECTION_MANAGER);
 
 						connection->Disconnect();
 						delete connection;
@@ -184,7 +184,7 @@ void ConnectionManager::Disconnect( ConnectionID connectionID )
 	{
 		Connection* connection = m_Connections.at( connectionID );
 		connection->Disconnect();
-		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " has been disconnected", LOG_CATEGORY_CONNECTION_MANAGER);
 
 		delete connection;
 		m_Connections.erase( connectionIterator );
@@ -192,7 +192,7 @@ void ConnectionManager::Disconnect( ConnectionID connectionID )
 		m_DisconnectionCallbacks.TriggerCallbacks( connectionID );
 	}
 	else
-		MLOG_WARNING( "Attempted to disconnect socket with id: " << connectionID + " but no socket with that ID was found", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_WARNING( "Attempted to disconnect socket with id: " << connectionID + " but no socket with that ID was found", LOG_CATEGORY_CONNECTION_MANAGER);
 }
 
 void ConnectionManager::DisconnectAll()
@@ -200,7 +200,7 @@ void ConnectionManager::DisconnectAll()
 	for (auto& connectionAndState = m_UnverifiedConnections.cbegin(); connectionAndState != m_UnverifiedConnections.cend();)
 	{
 		connectionAndState->first->Disconnect();
-		MLOG_INFO( "An unverified connection with destination " + TubesUtility::AddressToIPv4String( connectionAndState->first->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_INFO( "An unverified connection with destination " + TubesUtility::AddressToIPv4String( connectionAndState->first->GetAddress() ) + " has been disconnected", LOG_CATEGORY_CONNECTION_MANAGER);
 
 		delete connectionAndState->first;
 	}
@@ -211,7 +211,7 @@ void ConnectionManager::DisconnectAll()
 		ConnectionID connectionID = idAndConnection->first;
 
 		idAndConnection->second->Disconnect();
-		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String(idAndConnection->second->GetAddress() ) + " has been disconnected", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String(idAndConnection->second->GetAddress() ) + " has been disconnected", LOG_CATEGORY_CONNECTION_MANAGER);
 
 		delete idAndConnection->second;
 		m_Connections.erase(idAndConnection++);
@@ -264,7 +264,7 @@ void ConnectionManager::Connect( const std::string& address, Port port ) // TODO
 	Socket connectionSocket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Adress Family = INET and the protocol to be used is TCP
 	if ( connectionSocket <= 0 )
 	{
-		LogAPIErrorMessage( "Failed to create socket", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		LogAPIErrorMessage( "Failed to create socket", LOG_CATEGORY_CONNECTION_MANAGER);
 		return;
 	}
 
@@ -274,7 +274,7 @@ void ConnectionManager::Connect( const std::string& address, Port port ) // TODO
 	{
 		connection->SetNoDelay();
 
-		MLOG_INFO( "Connection attempt to " + address + " was successful!", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_INFO( "Connection attempt to " + address + " was successful!", LOG_CATEGORY_CONNECTION_MANAGER);
 		m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, ConnectionState::NewOutgoing) );
 	}
 	else
@@ -287,7 +287,7 @@ Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const
 	if (m_Connections.find(connectionID) != m_Connections.end())
 		toReturn = m_Connections.at(connectionID);
 	else
-		MLOG_WARNING( "Attempted to fetch unexsisting connection (ID = " << connectionID + " )", TUBES_LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_WARNING( "Attempted to fetch unexsisting connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
 
 	return toReturn;
 }

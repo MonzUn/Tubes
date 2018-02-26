@@ -20,7 +20,7 @@
 #define	RECEIVE_FLAGS 0
 #endif
 
-#define TUBES_LOG_CATEGORY_CONNECTION "TubesConnection"
+#define LOG_CATEGORY_CONNECTION "TubesConnection"
 #define CONNECTION_TIMEOUT_SECONDS 2 // TODODB: Make this a settable variable
 
 #if PLATFORM == PLATFORM_WINDOWS
@@ -79,7 +79,7 @@ bool Connection::Connect() // TODODB: Doesn't this function block for the timeou
 	FD_SET(m_Socket, &set);
 
 	// Attempt to connect
-	MLOG_INFO("Attempting to connect to " + AddressToIPv4String(m_Address), TUBES_LOG_CATEGORY_CONNECTION);
+	MLOG_INFO("Attempting to connect to " + AddressToIPv4String(m_Address), LOG_CATEGORY_CONNECTION);
 
 	int result;
 	if ((result = connect(m_Socket, reinterpret_cast<sockaddr*>(&m_Sockaddr), sizeof(sockaddr_in))) == INVALID_SOCKET)
@@ -92,12 +92,12 @@ bool Connection::Connect() // TODODB: Doesn't this function block for the timeou
 	// Check result of the connection
 	if (result == 0)
 	{
-		MLOG_INFO("Connection attempt to " + AddressToIPv4String(m_Address) + " timed out", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_INFO("Connection attempt to " + AddressToIPv4String(m_Address) + " timed out", LOG_CATEGORY_CONNECTION);
 		return false;
 	}
 	else if (result < 0)
 	{
-		LogAPIErrorMessage("Connection attempt to " + AddressToIPv4String(m_Address) + " failed", TUBES_LOG_CATEGORY_CONNECTION);
+		LogAPIErrorMessage("Connection attempt to " + AddressToIPv4String(m_Address) + " failed", LOG_CATEGORY_CONNECTION);
 		return false;
 	}
 
@@ -126,7 +126,7 @@ bool Connection::SetBlockingMode( bool shouldBlock )
 #endif
 	if ( result != 0 )
 	{
-		MLOG_ERROR( "Failed to set socket to non blocking mode", TUBES_LOG_CATEGORY_CONNECTION );
+		MLOG_ERROR( "Failed to set socket to non blocking mode", LOG_CATEGORY_CONNECTION );
 	}
 
 	return result == 0;
@@ -140,7 +140,7 @@ bool Connection::SetNoDelay()
 	int result	= setsockopt( m_Socket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>( &flag ), sizeof( int ) );
 	if ( result < 0 )
 	{
-		LogAPIErrorMessage( "Failed to set TCP_NODELAY for socket with destination " + AddressToIPv4String(m_Address) + " (Error: " << result + ")", TUBES_LOG_CATEGORY_CONNECTION );
+		LogAPIErrorMessage( "Failed to set TCP_NODELAY for socket with destination " + AddressToIPv4String(m_Address) + " (Error: " << result + ")", LOG_CATEGORY_CONNECTION );
 		returnValue = false;
 	}
 	return returnValue;
@@ -152,7 +152,7 @@ SendResult Connection::SerializeAndSendMessage(const Message& message, MessageRe
 {
 	if (m_Socket == INVALID_SOCKET)
 	{
-		MLOG_ERROR("Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String(m_Address) + " )", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_ERROR("Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String(m_Address) + " )", LOG_CATEGORY_CONNECTION);
 		return SendResult::Error;
 	}
 
@@ -161,7 +161,7 @@ SendResult Connection::SerializeAndSendMessage(const Message& message, MessageRe
 
 	if (serializedMessage == nullptr)
 	{
-		MLOG_WARNING("Failed to serialize message of type" << message.Type + ". The message will not be sent", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_WARNING("Failed to serialize message of type" << message.Type + ". The message will not be sent", LOG_CATEGORY_CONNECTION);
 		free(serializedMessage);
 		return SendResult::Error;
 	}
@@ -200,7 +200,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 {
 	if (m_Socket == INVALID_SOCKET)
 	{
-		MLOG_ERROR("Attempted to receive from invalid socket", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_ERROR("Attempted to receive from invalid socket", LOG_CATEGORY_CONNECTION);
 		return ReceiveResult::Error;
 	}
 
@@ -211,7 +211,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 
 		if (byteCountReceived == 0)
 		{
-			MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected gracefully", TUBES_LOG_CATEGORY_CONNECTION);
+			MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected gracefully", LOG_CATEGORY_CONNECTION);
 			return ReceiveResult::GracefulDisconnect;
 		}
 		else if (byteCountReceived == -1) // No data was ready to be received or there was an error
@@ -223,12 +223,12 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 				if (error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET)
 				{
 					result = ReceiveResult::ForcefulDisconnect;
-					MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected forcefully", TUBES_LOG_CATEGORY_CONNECTION);
+					MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected forcefully", LOG_CATEGORY_CONNECTION);
 				}
 				else
 				{
 					result = ReceiveResult::Error;
-					LogAPIErrorMessage("An unhandled error occured while receiving header data", TUBES_LOG_CATEGORY_CONNECTION);
+					LogAPIErrorMessage("An unhandled error occured while receiving header data", LOG_CATEGORY_CONNECTION);
 				}
 			}
 			return result;
@@ -259,7 +259,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 
 	if (byteCountReceived == 0)
 	{
-		MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected gracefully", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected gracefully", LOG_CATEGORY_CONNECTION);
 		return ReceiveResult::GracefulDisconnect;
 	}
 	else if (byteCountReceived == -1) // No data was ready to be received or there was an error // TODODB: This code is almost duplicated. See if it can be removed
@@ -271,12 +271,12 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 			if (error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET)
 			{
 				result = ReceiveResult::ForcefulDisconnect;
-				MLOG_INFO("Connection to " + TubesUtility::AddressToIPv4String(m_Address) + " was aborted", TUBES_LOG_CATEGORY_CONNECTION);
+				MLOG_INFO("Connection to " + TubesUtility::AddressToIPv4String(m_Address) + " was aborted", LOG_CATEGORY_CONNECTION);
 			}
 			else
 			{
 				result = ReceiveResult::Error;
-				LogAPIErrorMessage("An unhandled error occured while receiving payload data", TUBES_LOG_CATEGORY_CONNECTION);
+				LogAPIErrorMessage("An unhandled error occured while receiving payload data", LOG_CATEGORY_CONNECTION);
 			}
 		}
 		return result;
@@ -291,7 +291,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 
 		if (replicators.find(replicatorID) == replicators.end()) // The requested replicator doesn't exist
 		{
-			MLOG_ERROR("Attempted to use replicator with id " << replicatorID + " but no such replicator exists", TUBES_LOG_CATEGORY_CONNECTION);
+			MLOG_ERROR("Attempted to use replicator with id " << replicatorID + " but no such replicator exists", LOG_CATEGORY_CONNECTION);
 			free(m_ReceiveBuffer.PayloadData);
 			return ReceiveResult::Error;
 		}
@@ -368,7 +368,7 @@ SendResult Connection::SendSerializedMessage(Byte* serializedMessage, MessageSiz
 		else
 		{
 			result = SendResult::Error;
-			LogAPIErrorMessage("Sending of packet with length " << messageSize << " and destination " << AddressToIPv4String(m_Address) << " failed", TUBES_LOG_CATEGORY_CONNECTION);
+			LogAPIErrorMessage("Sending of packet with length " << messageSize << " and destination " << AddressToIPv4String(m_Address) << " failed", LOG_CATEGORY_CONNECTION);
 		}
 	}
 

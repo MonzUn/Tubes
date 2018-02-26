@@ -3,7 +3,7 @@
 #include "TubesUtility.h"
 #include <MUtilityThreading.h>
 
-#define TUBES_LOG_CATEGORY_LISTENER "TubesListener"
+#define LOG_CATEGORY_LISTENER "TubesListener"
 
 Listener::Listener()
 {
@@ -23,7 +23,7 @@ bool Listener::StartListening(Port port)
 	m_ListeningSocket = static_cast<Socket>(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)); // Will be used to listen for incoming connections
 	if (m_ListeningSocket == INVALID_SOCKET)
 	{
-		LogAPIErrorMessage("Failed to set up listening socket", TUBES_LOG_CATEGORY_LISTENER);
+		LogAPIErrorMessage("Failed to set up listening socket", LOG_CATEGORY_LISTENER);
 		return false;
 	}
 
@@ -41,21 +41,21 @@ bool Listener::StartListening(Port port)
 	// Bind the listening socket object to an actual socket.
 	if (bind(m_ListeningSocket, (sockaddr*)&sockAddr, sizeof(sockAddr)) < 0)
 	{
-		LogAPIErrorMessage("Failed to bind listening socket", TUBES_LOG_CATEGORY_LISTENER);
+		LogAPIErrorMessage("Failed to bind listening socket", LOG_CATEGORY_LISTENER);
 		return false;
 	}
 
 	// Start listening for incoming connections
 	if (listen(m_ListeningSocket, MAX_LISTENING_BACKLOG) < 0)
 	{
-		LogAPIErrorMessage("Failed to start listening socket", TUBES_LOG_CATEGORY_LISTENER);
+		LogAPIErrorMessage("Failed to start listening socket", LOG_CATEGORY_LISTENER);
 		return false;
 	}
 
 	//std::thread* thread = new std::thread(&ConnectionManager::Listen, this, listeningSocket, listener->ShouldTerminate);
 	m_Thread = new std::thread(&Listener::Listen, this);
 
-	MLOG_INFO("Listening for incoming connections on port " << port, TUBES_LOG_CATEGORY_LISTENER);
+	MLOG_INFO("Listening for incoming connections on port " << port, LOG_CATEGORY_LISTENER);
 	return true;
 }
 
@@ -100,7 +100,7 @@ void Listener::Listen()
 		{
 			int error = GET_NETWORK_ERROR;
 			if (error != TUBES_EINTR) // The socket was killed on purpose
-				LogAPIErrorMessage("An incoming connection attempt failed", TUBES_LOG_CATEGORY_LISTENER); // TODODB: See if we cant get the ip and print it here
+				LogAPIErrorMessage("An incoming connection attempt failed", LOG_CATEGORY_LISTENER); // TODODB: See if we cant get the ip and print it here
 		}
 	} while (!*m_ShouldTerminateListeningThread);
 }
