@@ -36,18 +36,18 @@ std::string	TubesUtility::AddressToIPv4String( Address address )
 
 Address TubesUtility::IPv4StringToAddress( const std::string& addressString )
 {
-	// Split the adress into its parts
-	uint32_t adressParts[4];
+	// Split the address into its parts
+	uint32_t addressParts[4];
 	int startSearchPos = 0;
 	for ( int i = 0; i < 4; ++i )
 	{
 		int stopSearchPos = static_cast<int>( addressString.find( '.', startSearchPos ) );
 		std::string currentAdressPart = addressString.substr( startSearchPos, stopSearchPos - startSearchPos );
 		startSearchPos = stopSearchPos + 1; // +1 to not find same delimiter on next search
-		adressParts[i] = static_cast<unsigned int>( std::stoul( currentAdressPart.c_str() ) );
+		addressParts[i] = static_cast<unsigned int>( std::stoul( currentAdressPart.c_str() ) );
 	}
 
-	return ( adressParts[0] << 24 ) | ( adressParts[1] << 16 ) | ( adressParts[2] << 8 ) | adressParts[3];
+	return ( addressParts[0] << 24 ) | ( addressParts[1] << 16 ) | ( addressParts[2] << 8 ) | addressParts[3];
 }
 
 void TubesUtility::ShutdownAndCloseSocket( Socket& socket )

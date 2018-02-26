@@ -261,7 +261,7 @@ bool ConnectionManager::UnregisterDisconnectionCallback( DisconnectionCallbackHa
 void ConnectionManager::Connect( const std::string& address, Port port ) // TODODB: Make this run on a separate thread to avoid blocking the main thread
 {
 	// Set up the socket
-	Socket connectionSocket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Adress Family = INET and the protocol to be used is TCP
+	Socket connectionSocket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Address Family = INET and the protocol to be used is TCP
 	if ( connectionSocket <= 0 )
 	{
 		LogAPIErrorMessage( "Failed to create socket", LOG_CATEGORY_CONNECTION_MANAGER);
