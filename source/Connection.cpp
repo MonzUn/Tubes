@@ -242,7 +242,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 			m_ReceiveBuffer.Walker = m_ReceiveBuffer.PayloadData; // Walker now points to the new buffer since that is where we will want to write on the next recv
 
 			// Write down the size at the beginning so the serialization is done properly
-			MUtilitySerialization::CopyAndIncrementDestination(m_ReceiveBuffer.Walker, &m_ReceiveBuffer.ExpectedPayloadBytes, sizeof(MessageSize));
+			MUtility::Serialization::CopyAndIncrementDestination(m_ReceiveBuffer.Walker, &m_ReceiveBuffer.ExpectedPayloadBytes, sizeof(MessageSize));
 			m_ReceiveBuffer.ExpectedPayloadBytes -= sizeof(MessageSize); // We have already received the size variable
 
 			m_ReceiveBuffer.ExpectedHeaderBytes = 0; // Reset the expected header bytes variable so it indicates that payload data is being received now

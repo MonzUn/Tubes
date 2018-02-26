@@ -6,8 +6,7 @@
 #include <MUtilitySerialization.h>
 #include <cassert>
 
-using namespace DataSizes;
-using namespace MUtilitySerialization;
+using namespace MUtility::Serialization;
 using namespace TubesMessages;
 
 using Tubes::ConnectionID;
@@ -37,7 +36,7 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageS
 	CopyAndIncrementDestination(m_WritingWalker, &message->Replicator_ID, sizeof(ReplicatorID));
 
 	// Write the message type variable
-	MUtilitySerialization::CopyAndIncrementDestination( m_WritingWalker, &message->Type, sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE ) );
+	CopyAndIncrementDestination( m_WritingWalker, &message->Type, sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE ) );
 
 	// Perform serialization specific to each message type (Use same order as in the type enums here)
 	switch ( message->Type )
