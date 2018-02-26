@@ -38,8 +38,8 @@ public:
 	void				ReadString(					std::string&	value  );
 
 protected:
-	MUtility::Byte*		m_WritingWalker		= nullptr;
-	const MUtility::Byte* m_ReadingWalker		= nullptr;
+	MUtility::Byte*			m_WritingWalker		= nullptr;
+	const MUtility::Byte*	m_ReadingWalker		= nullptr;
 
 private:
 	ReplicatorID m_ID;

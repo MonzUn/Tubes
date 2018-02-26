@@ -19,16 +19,19 @@
 
 #define TUBES_LOG_CATEGORY_GENERAL "Tubes"
 
-ConnectionManager*	m_ConnectionManager; // TODODB: Create an internal header to structure these variables and functions
+namespace Tubes
+{
+	ConnectionManager*	m_ConnectionManager; // TODODB: Create an internal header to structure these variables and functions
 
-std::unordered_map<ReplicatorID, MessageReplicator*>*	m_ReplicatorReferences;
-TubesMessageReplicator*									m_TubesMessageReplicator;
+	std::unordered_map<ReplicatorID, MessageReplicator*>*	m_ReplicatorReferences;
+	TubesMessageReplicator*									m_TubesMessageReplicator;
 
-std::vector<TubesMessage*>* m_ReceivedTubesMessages;
+	std::vector<TubesMessage*>* m_ReceivedTubesMessages;
 
-bool m_Initialized = false;
+	bool m_Initialized = false;
+}
 
-bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the isntance is already initialized
+bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the instance is already initialized
 { 
 	if ( !m_Initialized )
 	{

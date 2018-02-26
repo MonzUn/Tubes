@@ -31,21 +31,21 @@ public:
 
 	SendResult				SendQueuedMessages();
 
-	bool					operator == ( const Connection& other ) const { return this->m_address == other.m_address && this->m_socket == other.m_socket; }
-	bool					operator != ( const Connection& other ) const { return this->m_address != other.m_address || this->m_socket != other.m_socket; }
+	bool					operator == ( const Connection& other ) const { return this->m_Address == other.m_Address && this->m_Socket == other.m_Socket; }
+	bool					operator != ( const Connection& other ) const { return this->m_Address != other.m_Address || this->m_Socket != other.m_Socket; }
 
-	Address					GetAddress() const { return m_address; }
-	Port					GetPort() const { return m_port; }
+	Address					GetAddress() const { return m_Address; }
+	Port					GetPort() const { return m_Port; }
 
 private:
 	
 	SendResult				SendSerializedMessage(MUtility::Byte* serializedMessage, MessageSize messageSize);
 
-	Socket					m_socket;
-	Address					m_address;
-	Port					m_port;
-	struct sockaddr_in		m_sockaddr;
-	ReceiveBuffer			m_receiveBuffer;
+	Socket					m_Socket;
+	Address					m_Address;
+	Port					m_Port;
+	struct sockaddr_in		m_Sockaddr;
+	ReceiveBuffer			m_ReceiveBuffer;
 
 	std::queue<std::pair<MUtility::Byte*, MessageSize>> unsentMessages; // TODODB: Create struct holding Byte* and Messagesize to get rid of code like".front().first"
 };

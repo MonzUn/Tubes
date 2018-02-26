@@ -24,13 +24,13 @@ protected:
 	Subscriber( const std::string& name );
 	virtual ~Subscriber();
 
-	MESSAGE_TYPE_ENUM_UNDELYING_TYPE	m_SimInterests	= 0;
-	MESSAGE_TYPE_ENUM_UNDELYING_TYPE	m_UserInterests = 0;
+	MESSAGE_TYPE_ENUM_UNDELYING_TYPE		m_SimInterests	= 0;
+	MESSAGE_TYPE_ENUM_UNDELYING_TYPE		m_UserInterests = 0;
 	std::vector<const UserMessage*>			m_UserMessages;
 	std::vector<const SimulationMessage*>	m_SimMessages;
 
-	std::mutex							m_UserLock;
-	std::mutex							m_SimLock;
+	std::mutex m_UserLock;
+	std::mutex m_SimLock;
 
 private:
 	// No copying allowed!

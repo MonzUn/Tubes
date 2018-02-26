@@ -36,26 +36,26 @@ using MUtility::Byte;
 
 Connection::Connection( Socket connectionSocket, const std::string& destinationAddress, Port destinationPort )
 {
-	m_socket	= connectionSocket;
-	m_address	= TubesUtility::IPv4StringToAddress( destinationAddress ); // TODODB: Handle ipv6
-	m_port	=  destinationPort;
+	m_Socket	= connectionSocket;
+	m_Address	= TubesUtility::IPv4StringToAddress( destinationAddress ); // TODODB: Handle ipv6
+	m_Port	=  destinationPort;
 
-	memset( &m_sockaddr, 0, sizeof( sockaddr ) );
-	m_sockaddr.sin_family		= AF_INET;
-	m_sockaddr.sin_addr.s_addr	= htonl( m_address );
-	m_sockaddr.sin_port			= htons( m_port );
+	memset( &m_Sockaddr, 0, sizeof( sockaddr ) );
+	m_Sockaddr.sin_family		= AF_INET;
+	m_Sockaddr.sin_addr.s_addr	= htonl( m_Address );
+	m_Sockaddr.sin_port			= htons( m_Port );
 }
 
 Connection::Connection( Socket connectionSocket, const sockaddr_in& destination )
 {
-	m_socket	= connectionSocket;
-	m_address	= ntohl( destination.sin_addr.s_addr );
-	m_port		= ntohs( destination.sin_port );		// Local port if destination is a received connection
+	m_Socket	= connectionSocket;
+	m_Address	= ntohl( destination.sin_addr.s_addr );
+	m_Port		= ntohs( destination.sin_port );		// Local port if destination is a received connection
 
-	memset( &m_sockaddr, 0, sizeof( sockaddr_in ) );
-	m_sockaddr.sin_family		= AF_INET;
-	m_sockaddr.sin_addr.s_addr	= destination.sin_addr.s_addr;
-	m_sockaddr.sin_port			= destination.sin_port;
+	memset( &m_Sockaddr, 0, sizeof( sockaddr_in ) );
+	m_Sockaddr.sin_family		= AF_INET;
+	m_Sockaddr.sin_addr.s_addr	= destination.sin_addr.s_addr;
+	m_Sockaddr.sin_port			= destination.sin_port;
 }
 
 Connection::~Connection()
@@ -76,28 +76,28 @@ bool Connection::Connect() // TODODB: Doesn't this function block for the timeou
 
 	fd_set set;
 	FD_ZERO(&set);
-	FD_SET(m_socket, &set);
+	FD_SET(m_Socket, &set);
 
 	// Attempt to connect
-	MLOG_INFO("Attempting to connect to " + AddressToIPv4String(m_address), TUBES_LOG_CATEGORY_CONNECTION);
+	MLOG_INFO("Attempting to connect to " + AddressToIPv4String(m_Address), TUBES_LOG_CATEGORY_CONNECTION);
 
 	int result;
-	if ((result = connect(m_socket, reinterpret_cast<sockaddr*>(&m_sockaddr), sizeof(sockaddr_in))) == INVALID_SOCKET)
+	if ((result = connect(m_Socket, reinterpret_cast<sockaddr*>(&m_Sockaddr), sizeof(sockaddr_in))) == INVALID_SOCKET)
 	{
 		if (!SHOULD_WAIT_FOR_TIMEOUT)
 			return false;
 	}
-	result = select(static_cast<int>(m_socket + 1), NULL, &set, NULL, &timeOut);
+	result = select(static_cast<int>(m_Socket + 1), NULL, &set, NULL, &timeOut);
 
 	// Check result of the connection
 	if (result == 0)
 	{
-		MLOG_INFO("Connection attempt to " + AddressToIPv4String(m_address) + " timed out", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_INFO("Connection attempt to " + AddressToIPv4String(m_Address) + " timed out", TUBES_LOG_CATEGORY_CONNECTION);
 		return false;
 	}
 	else if (result < 0)
 	{
-		LogAPIErrorMessage("Connection attempt to " + AddressToIPv4String(m_address) + " failed", TUBES_LOG_CATEGORY_CONNECTION);
+		LogAPIErrorMessage("Connection attempt to " + AddressToIPv4String(m_Address) + " failed", TUBES_LOG_CATEGORY_CONNECTION);
 		return false;
 	}
 
@@ -112,7 +112,7 @@ void Connection::Disconnect()
 		unsentMessages.pop();
 	}
 
-	TubesUtility::ShutdownAndCloseSocket(m_socket);
+	TubesUtility::ShutdownAndCloseSocket(m_Socket);
 }
 
 bool Connection::SetBlockingMode( bool shouldBlock )
@@ -120,7 +120,7 @@ bool Connection::SetBlockingMode( bool shouldBlock )
 	int result;
 #if PLATFORM == PLATFORM_WINDOWS
 	unsigned long nonBlocking = static_cast<unsigned long>( !shouldBlock );
-	result = ioctlsocket( m_socket, FIONBIO, &nonBlocking );
+	result = ioctlsocket( m_Socket, FIONBIO, &nonBlocking );
 #else
 	shouldBlock ? result = fcntl( socket, F_SETFL, fcntl( socket, F_GETFL, 1 ) | O_NONBLOCK ) : result = fcntl( socket, F_SETFL, fcntl( socket, F_GETFL, 0 ) | O_NONBLOCK );
 #endif
@@ -137,10 +137,10 @@ bool Connection::SetNoDelay()
 	bool returnValue = true;
 
 	int flag	= 1;
-	int result	= setsockopt( m_socket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>( &flag ), sizeof( int ) );
+	int result	= setsockopt( m_Socket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>( &flag ), sizeof( int ) );
 	if ( result < 0 )
 	{
-		LogAPIErrorMessage( "Failed to set TCP_NODELAY for socket with destination " + AddressToIPv4String(m_address) + " (Error: " << result + ")", TUBES_LOG_CATEGORY_CONNECTION );
+		LogAPIErrorMessage( "Failed to set TCP_NODELAY for socket with destination " + AddressToIPv4String(m_Address) + " (Error: " << result + ")", TUBES_LOG_CATEGORY_CONNECTION );
 		returnValue = false;
 	}
 	return returnValue;
@@ -150,9 +150,9 @@ bool Connection::SetNoDelay()
 
 SendResult Connection::SerializeAndSendMessage(const Message& message, MessageReplicator& replicator)
 {
-	if (m_socket == INVALID_SOCKET)
+	if (m_Socket == INVALID_SOCKET)
 	{
-		MLOG_ERROR("Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String(m_address) + " )", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_ERROR("Attempted to send message through invalid socket. (Destination =  " + AddressToIPv4String(m_Address) + " )", TUBES_LOG_CATEGORY_CONNECTION);
 		return SendResult::Error;
 	}
 
@@ -198,20 +198,20 @@ SendResult Connection::SerializeAndSendMessage(const Message& message, MessageRe
 
 ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, MessageReplicator*>& replicators, Message*& outMessage )
 {
-	if (m_socket == INVALID_SOCKET)
+	if (m_Socket == INVALID_SOCKET)
 	{
 		MLOG_ERROR("Attempted to receive from invalid socket", TUBES_LOG_CATEGORY_CONNECTION);
 		return ReceiveResult::Error;
 	}
 
 	int32_t byteCountReceived;
-	if (m_receiveBuffer.ExpectedHeaderBytes > 0) // If we are waiting for header data
+	if (m_ReceiveBuffer.ExpectedHeaderBytes > 0) // If we are waiting for header data
 	{
-		byteCountReceived = recv(m_socket, reinterpret_cast<char*>(m_receiveBuffer.Walker), m_receiveBuffer.ExpectedHeaderBytes, RECEIVE_FLAGS); // Attempt to receive header
+		byteCountReceived = recv(m_Socket, reinterpret_cast<char*>(m_ReceiveBuffer.Walker), m_ReceiveBuffer.ExpectedHeaderBytes, RECEIVE_FLAGS); // Attempt to receive header
 
 		if (byteCountReceived == 0)
 		{
-			MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_address) + " has disconnected gracefully", TUBES_LOG_CATEGORY_CONNECTION);
+			MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected gracefully", TUBES_LOG_CATEGORY_CONNECTION);
 			return ReceiveResult::GracefulDisconnect;
 		}
 		else if (byteCountReceived == -1) // No data was ready to be received or there was an error
@@ -223,7 +223,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 				if (error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET)
 				{
 					result = ReceiveResult::ForcefulDisconnect;
-					MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_address) + " has disconnected forcefully", TUBES_LOG_CATEGORY_CONNECTION);
+					MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected forcefully", TUBES_LOG_CATEGORY_CONNECTION);
 				}
 				else
 				{
@@ -234,32 +234,32 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 			return result;
 		}
 
-		if (byteCountReceived == m_receiveBuffer.ExpectedHeaderBytes) // We received the full header
+		if (byteCountReceived == m_ReceiveBuffer.ExpectedHeaderBytes) // We received the full header
 		{
 			// Get the size of the packet (Embedded as first part) and create a buffer of that size
-			m_receiveBuffer.PayloadData = static_cast<Byte*>(malloc(m_receiveBuffer.ExpectedPayloadBytes));
+			m_ReceiveBuffer.PayloadData = static_cast<Byte*>(malloc(m_ReceiveBuffer.ExpectedPayloadBytes));
 
-			m_receiveBuffer.Walker = m_receiveBuffer.PayloadData; // Walker now points to the new buffer since that is where we will want to write on the next recv
+			m_ReceiveBuffer.Walker = m_ReceiveBuffer.PayloadData; // Walker now points to the new buffer since that is where we will want to write on the next recv
 
 			// Write down the size at the beginning so the serialization is done properly
-			MUtilitySerialization::CopyAndIncrementDestination(m_receiveBuffer.Walker, &m_receiveBuffer.ExpectedPayloadBytes, sizeof(MessageSize));
-			m_receiveBuffer.ExpectedPayloadBytes -= sizeof(MessageSize); // We have already received the size variable
+			MUtilitySerialization::CopyAndIncrementDestination(m_ReceiveBuffer.Walker, &m_ReceiveBuffer.ExpectedPayloadBytes, sizeof(MessageSize));
+			m_ReceiveBuffer.ExpectedPayloadBytes -= sizeof(MessageSize); // We have already received the size variable
 
-			m_receiveBuffer.ExpectedHeaderBytes = 0; // Reset the expected header bytes variable so it indicates that payload data is being received now
+			m_ReceiveBuffer.ExpectedHeaderBytes = 0; // Reset the expected header bytes variable so it indicates that payload data is being received now
 		}
 		else // Only a part of the header was received. Account for this and handle it in an upcoming call of this function
 		{
-			m_receiveBuffer.ExpectedHeaderBytes -= byteCountReceived;
-			m_receiveBuffer.Walker += byteCountReceived;
+			m_ReceiveBuffer.ExpectedHeaderBytes -= byteCountReceived;
+			m_ReceiveBuffer.Walker += byteCountReceived;
 			return ReceiveResult::PartialMessage;
 		}
 	}
 
-	byteCountReceived = recv(m_socket, reinterpret_cast<char*>(m_receiveBuffer.Walker), m_receiveBuffer.ExpectedPayloadBytes, RECEIVE_FLAGS); // Attempt to receive payload
+	byteCountReceived = recv(m_Socket, reinterpret_cast<char*>(m_ReceiveBuffer.Walker), m_ReceiveBuffer.ExpectedPayloadBytes, RECEIVE_FLAGS); // Attempt to receive payload
 
 	if (byteCountReceived == 0)
 	{
-		MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_address) + " has disconnected gracefully", TUBES_LOG_CATEGORY_CONNECTION);
+		MLOG_INFO("A Connection with destination " + TubesUtility::AddressToIPv4String(m_Address) + " has disconnected gracefully", TUBES_LOG_CATEGORY_CONNECTION);
 		return ReceiveResult::GracefulDisconnect;
 	}
 	else if (byteCountReceived == -1) // No data was ready to be received or there was an error // TODODB: This code is almost duplicated. See if it can be removed
@@ -271,7 +271,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 			if (error == TUBES_ECONNECTIONABORTED || error == TUBES_ECONNRESET)
 			{
 				result = ReceiveResult::ForcefulDisconnect;
-				MLOG_INFO("Connection to " + TubesUtility::AddressToIPv4String(m_address) + " was aborted", TUBES_LOG_CATEGORY_CONNECTION);
+				MLOG_INFO("Connection to " + TubesUtility::AddressToIPv4String(m_Address) + " was aborted", TUBES_LOG_CATEGORY_CONNECTION);
 			}
 			else
 			{
@@ -283,32 +283,32 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 	}
 
 	// If all data was received. Clean up, prepare for next call and return the buffer as a packet (Will need to be cast to the correct type on the outside using the Type field)
-	if (byteCountReceived == m_receiveBuffer.ExpectedPayloadBytes)
+	if (byteCountReceived == m_ReceiveBuffer.ExpectedPayloadBytes)
 	{
 		// Read the replicator id
 		ReplicatorID replicatorID;
-		memcpy(&replicatorID, m_receiveBuffer.PayloadData + sizeof(MessageSize), sizeof(ReplicatorID)); // sizeof( MessageSize ) is for skipping the size variable embedded at the beginning of the buffer
+		memcpy(&replicatorID, m_ReceiveBuffer.PayloadData + sizeof(MessageSize), sizeof(ReplicatorID)); // sizeof( MessageSize ) is for skipping the size variable embedded at the beginning of the buffer
 
 		if (replicators.find(replicatorID) == replicators.end()) // The requested replicator doesn't exist
 		{
 			MLOG_ERROR("Attempted to use replicator with id " << replicatorID + " but no such replicator exists", TUBES_LOG_CATEGORY_CONNECTION);
-			free(m_receiveBuffer.PayloadData);
+			free(m_ReceiveBuffer.PayloadData);
 			return ReceiveResult::Error;
 		}
 
-		outMessage = replicators.at(replicatorID)->DeserializeMessage(m_receiveBuffer.PayloadData);
-		free(m_receiveBuffer.PayloadData);
-		m_receiveBuffer.ExpectedHeaderBytes = sizeof(MessageSize); // TODODB: Use default defines for these values
-		m_receiveBuffer.ExpectedPayloadBytes = NOT_EXPECTING_PAYLOAD;
-		m_receiveBuffer.PayloadData = nullptr;
-		m_receiveBuffer.Walker = reinterpret_cast<Byte*>(&m_receiveBuffer.ExpectedPayloadBytes);
+		outMessage = replicators.at(replicatorID)->DeserializeMessage(m_ReceiveBuffer.PayloadData);
+		free(m_ReceiveBuffer.PayloadData);
+		m_ReceiveBuffer.ExpectedHeaderBytes = sizeof(MessageSize); // TODODB: Use default defines for these values
+		m_ReceiveBuffer.ExpectedPayloadBytes = NOT_EXPECTING_PAYLOAD;
+		m_ReceiveBuffer.PayloadData = nullptr;
+		m_ReceiveBuffer.Walker = reinterpret_cast<Byte*>(&m_ReceiveBuffer.ExpectedPayloadBytes);
 
 		return ReceiveResult::Fullmessage;
 	}
 	else // Only part of the payload was received. Account for this and attempt to receive the rest in an upcoming call of this function
 	{
-		m_receiveBuffer.ExpectedPayloadBytes -= byteCountReceived;
-		m_receiveBuffer.Walker += byteCountReceived;
+		m_ReceiveBuffer.ExpectedPayloadBytes -= byteCountReceived;
+		m_ReceiveBuffer.Walker += byteCountReceived;
 		return ReceiveResult::PartialMessage;
 	}
 }
@@ -347,7 +347,7 @@ SendResult Connection::SendQueuedMessages()
 SendResult Connection::SendSerializedMessage(Byte* serializedMessage, MessageSize messageSize)
 {
 	SendResult result;
-	int32_t bytesSent = send(m_socket, reinterpret_cast<const char*>(serializedMessage), messageSize, SEND_FLAGS);
+	int32_t bytesSent = send(m_Socket, reinterpret_cast<const char*>(serializedMessage), messageSize, SEND_FLAGS);
 	if (bytesSent == messageSize)
 	{
 		free(serializedMessage);
@@ -368,7 +368,7 @@ SendResult Connection::SendSerializedMessage(Byte* serializedMessage, MessageSiz
 		else
 		{
 			result = SendResult::Error;
-			LogAPIErrorMessage("Sending of packet with length " << messageSize << " and destination " << AddressToIPv4String(m_address) << " failed", TUBES_LOG_CATEGORY_CONNECTION);
+			LogAPIErrorMessage("Sending of packet with length " << messageSize << " and destination " << AddressToIPv4String(m_Address) << " failed", TUBES_LOG_CATEGORY_CONNECTION);
 		}
 	}
 
