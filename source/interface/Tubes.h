@@ -17,7 +17,8 @@ namespace Tubes
 
 	void RequestConnection( const std::string& address, uint16_t port );
 	bool StartListener(uint16_t port);
-	void StopAllListeners();
+	bool StopListener(uint16_t port);
+	bool StopAllListeners();
 	void Disconnect( ConnectionID connectionID );
 	void DisconnectAll();
 

@@ -244,14 +244,36 @@ bool ConnectionManager::StartListener(Port port)
 	return result;
 }
 
-void ConnectionManager::StopAllListeners()
+bool ConnectionManager::StopListener(Port port)
 {
-	for ( auto&& portListener : m_ListenerMap )
+	bool result = false;
+	auto portAndListener = m_ListenerMap.find(port);
+	if (portAndListener != m_ListenerMap.end())
 	{
-		portListener.second->StopListening();
-		delete portListener.second;
+		portAndListener->second->StopListening();
+		delete portAndListener->second;
+		m_ListenerMap.erase(portAndListener);
+		result = true;
 	}
-	m_ListenerMap.clear();
+	else
+		MLOG_WARNING("Attempted to stop non existent listener for port " << port, LOG_CATEGORY_CONNECTION_MANAGER);
+	return result;
+}
+
+bool ConnectionManager::StopAllListeners()
+{
+	std::vector<Port> ports; // TODODB: MAke utility functions for getting keys or values from a map and putting them into a vector
+	for (auto& portAndListener : m_ListenerMap)
+	{
+		ports.push_back(portAndListener.first);
+	}
+
+	for (int i = 0; i < ports.size(); ++i)
+	{
+		StopListener(ports[i]);
+	}
+
+	return m_ListenerMap.empty();
 }
 
 ConnectionCallbackHandle ConnectionManager::RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction )

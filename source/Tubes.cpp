@@ -289,13 +289,26 @@ bool Tubes::StartListener(uint16_t port)
 
 	return result;
 }
-
-void Tubes::StopAllListeners()
+bool Tubes::StopListener(uint16_t port)
 {
+	bool result = false;
+	if (m_Initialized)
+		result = m_ConnectionManager->StopListener(port);
+	else
+		MLOG_WARNING("Attempted to stop listener although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
+
+	return result;
+}
+
+bool Tubes::StopAllListeners()
+{
+	bool result = false;
 	if ( m_Initialized )
-		m_ConnectionManager->StopAllListeners();
+		result = m_ConnectionManager->StopAllListeners();
 	else
 		MLOG_WARNING( "Attempted to stop all listeners although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
+
+	return result;
 }
 
 void Tubes::Disconnect( ConnectionID connectionID )

@@ -15,14 +15,15 @@ class ConnectionManager
 public:
 	~ConnectionManager();
 
-	void		VerifyNewConnections( TubesMessageReplicator& replicator );
-
-	void		RequestConnection( const std::string& address, Port port );
-	void		Disconnect( ConnectionID connectionID );
-	void		DisconnectAll();
-
-	bool		StartListener(Port port);
-	void		StopAllListeners(); // TODODB: Add option to stop only specific listener
+	void VerifyNewConnections( TubesMessageReplicator& replicator );
+		 
+	void RequestConnection( const std::string& address, Port port );
+	void Disconnect( ConnectionID connectionID );
+	void DisconnectAll();
+		 
+	bool StartListener(Port port);
+	bool StopListener(Port port);
+	bool StopAllListeners();
 	
 	ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction );
 	bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
