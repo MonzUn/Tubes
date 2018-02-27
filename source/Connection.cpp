@@ -21,7 +21,6 @@
 #endif
 
 #define LOG_CATEGORY_CONNECTION "TubesConnection"
-#define CONNECTION_TIMEOUT_SECONDS 2 // TODODB: Make this a settable variable
 
 #if PLATFORM == PLATFORM_WINDOWS
 #define SHOULD_WAIT_FOR_TIMEOUT static_cast<bool>( GET_NETWORK_ERROR == WSAEWOULDBLOCK )
@@ -31,6 +30,9 @@
 
 using namespace TubesUtility;
 using MUtility::Byte;
+
+constexpr uint32_t DEFAULT_CONNECTION_TIMEOUT_SECONDS = 2;
+uint32_t Connection::ConnectionTimeout = DEFAULT_CONNECTION_TIMEOUT_SECONDS;
 
 // ---------- PUBLIC ----------
 
@@ -71,7 +73,7 @@ bool Connection::Connect() // TODODB: Doesn't this function block for the timeou
 {
 	// Set up timeout variables
 	timeval timeOut;
-	timeOut.tv_sec = CONNECTION_TIMEOUT_SECONDS;
+	timeOut.tv_sec = ConnectionTimeout;
 	timeOut.tv_usec = 0;
 
 	fd_set set;

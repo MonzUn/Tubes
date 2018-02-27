@@ -37,6 +37,7 @@ public:
 	Address					GetAddress() const { return m_Address; }
 	Port					GetPort() const { return m_Port; }
 
+	static uint32_t			ConnectionTimeout;
 private:
 	
 	SendResult				SendSerializedMessage(MUtility::Byte* serializedMessage, MessageSize messageSize);
