@@ -1,11 +1,12 @@
 #include "ConnectionManager.h"
 #include "interface/messaging/MessagingTypes.h"
+#include "interface/TubesSettings.h"
 #include "Connection.h"
 #include "Listener.h"
+#include "TubesErrors.h"
 #include "TubesMessageReplicator.h"
 #include "TubesMessages.h"
 #include "TubesUtility.h"
-#include "TubesErrors.h"
 #include <MUtilityLog.h>
 #include <cassert>
 #include <thread>
@@ -32,43 +33,46 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 		portAndListener.second->FetchAcceptedConnections( newConnections );
 	}
 
-	// Make sure that the new connection doesn't already exist // TODODB: Make this optional
-	for ( int i = 0; i < newConnections.size(); ++i )
+	if (!Settings::AllowDuplicateConnections)
 	{
-		bool duplicate = false;
-		Connection*& newConnection = newConnections[i].first;
-		for ( int j = 0; j < m_UnverifiedConnections.size(); ++j )
+		// Make sure that the new connection doesn't already exist
+		for (int i = 0; i < newConnections.size(); ++i)
 		{
-			const Connection* existingConnection = m_UnverifiedConnections[j].first;
-			if ( newConnection->GetAddress() == existingConnection->GetAddress() && newConnection->GetPort() == existingConnection->GetPort() )
+			bool duplicate = false;
+			Connection*& newConnection = newConnections[i].first;
+			for (int j = 0; j < m_UnverifiedConnections.size(); ++j)
 			{
-				duplicate = true;
-				break;
-			}
-		}
-
-		if ( !duplicate )
-		{
-			for ( const auto& idAndConnection : m_Connections )
-			{
-				const Connection* existingConnection = idAndConnection.second;
-				if ( newConnection->GetAddress() == existingConnection->GetAddress() && newConnection->GetPort() == existingConnection->GetPort() )
+				const Connection* existingConnection = m_UnverifiedConnections[j].first;
+				if (newConnection->GetAddress() == existingConnection->GetAddress() && newConnection->GetPort() == existingConnection->GetPort())
 				{
 					duplicate = true;
 					break;
 				}
 			}
-		}
 
-		if ( duplicate )
-		{
-			MLOG_WARNING("An incoming connection with destination " << TubesUtility::AddressToIPv4String( newConnection->GetAddress() ) << " was diesconnected since an identical connection already existed", LOG_CATEGORY_CONNECTION_MANAGER);
-			newConnection->Disconnect();
-			delete newConnection;
-			newConnection = nullptr;
+			if (!duplicate)
+			{
+				for (const auto& idAndConnection : m_Connections)
+				{
+					const Connection* existingConnection = idAndConnection.second;
+					if (newConnection->GetAddress() == existingConnection->GetAddress() && newConnection->GetPort() == existingConnection->GetPort())
+					{
+						duplicate = true;
+						break;
+					}
+				}
+			}
+
+			if (duplicate)
+			{
+				MLOG_WARNING("An incoming connection with destination " << TubesUtility::AddressToIPv4String(newConnection->GetAddress()) << " was diesconnected since an identical connection already existed", LOG_CATEGORY_CONNECTION_MANAGER);
+				newConnection->Disconnect();
+				delete newConnection;
+				newConnection = nullptr;
+			}
+			else
+				m_UnverifiedConnections.push_back(newConnections[i]);
 		}
-		else
-			m_UnverifiedConnections.push_back( newConnections[i] );
 	}
 
 	for ( int i = 0; i < m_UnverifiedConnections.size(); ++i )
