@@ -52,7 +52,6 @@ bool Listener::StartListening(Port port)
 		return false;
 	}
 
-	//std::thread* thread = new std::thread(&ConnectionManager::Listen, this, listeningSocket, listener->ShouldTerminate);
 	m_Thread = new std::thread(&Listener::Listen, this);
 
 	MLOG_INFO("Listening for incoming connections on port " << port, LOG_CATEGORY_LISTENER);
