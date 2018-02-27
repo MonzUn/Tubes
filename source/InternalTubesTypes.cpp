@@ -4,14 +4,19 @@
 
 ReceiveBuffer::ReceiveBuffer()
 {
-	ExpectedHeaderBytes		= sizeof( MessageSize );
-	ExpectedPayloadBytes	= NOT_EXPECTING_PAYLOAD;
-	PayloadData				= nullptr;
-	Walker					= reinterpret_cast<MUtility::Byte*>( &ExpectedPayloadBytes );
+	Reset();
 }
 
 ReceiveBuffer::~ReceiveBuffer()
 {
 	if ( PayloadData != nullptr )
 		free( PayloadData );
+}
+
+void ReceiveBuffer::Reset()
+{
+	ExpectedHeaderBytes		= sizeof(MessageSize);
+	ExpectedPayloadBytes	= NOT_EXPECTING_PAYLOAD;
+	PayloadData				= nullptr;
+	Walker					= reinterpret_cast<MUtility::Byte*>(&ExpectedPayloadBytes);
 }

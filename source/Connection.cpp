@@ -289,7 +289,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 	{
 		// Read the replicator id
 		ReplicatorID replicatorID;
-		memcpy(&replicatorID, m_ReceiveBuffer.PayloadData + sizeof(MessageSize), sizeof(ReplicatorID)); // sizeof( MessageSize ) is for skipping the size variable embedded at the beginning of the buffer
+		memcpy(&replicatorID, m_ReceiveBuffer.PayloadData + sizeof(MessageSize), sizeof(ReplicatorID)); // sizeof(MessageSize) is for skipping the size variable embedded at the beginning of the buffer
 
 		if (replicators.find(replicatorID) == replicators.end()) // The requested replicator doesn't exist
 		{
@@ -300,10 +300,7 @@ ReceiveResult Connection::Receive( const std::unordered_map<ReplicatorID, Messag
 
 		outMessage = replicators.at(replicatorID)->DeserializeMessage(m_ReceiveBuffer.PayloadData);
 		free(m_ReceiveBuffer.PayloadData);
-		m_ReceiveBuffer.ExpectedHeaderBytes = sizeof(MessageSize); // TODODB: Use default defines for these values
-		m_ReceiveBuffer.ExpectedPayloadBytes = NOT_EXPECTING_PAYLOAD;
-		m_ReceiveBuffer.PayloadData = nullptr;
-		m_ReceiveBuffer.Walker = reinterpret_cast<Byte*>(&m_ReceiveBuffer.ExpectedPayloadBytes);
+		m_ReceiveBuffer.Reset();
 
 		return ReceiveResult::Fullmessage;
 	}
