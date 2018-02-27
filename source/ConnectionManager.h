@@ -21,7 +21,7 @@ public:
 	void		Disconnect( ConnectionID connectionID );
 	void		DisconnectAll();
 
-	void		StartListener( Port port );
+	bool		StartListener(Port port);
 	void		StopAllListeners(); // TODODB: Add option to stop only specific listener
 	
 	ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction );

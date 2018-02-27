@@ -225,11 +225,23 @@ void ConnectionManager::DisconnectAll()
 	m_Connections.clear();
 }
 
-void ConnectionManager::StartListener( Port port ) // TODODB: Add check against duplicates
+bool ConnectionManager::StartListener(Port port)
 {
-	Listener* listener = new Listener; // TODODB: See if we can change stuff around to get this off the heap
-	if(listener->StartListening(port))
-		m_ListenerMap.emplace( port, listener );
+	for (auto& portAndListener : m_ListenerMap)
+	{
+		if (portAndListener.first == port)
+		{
+			MLOG_WARNING("Attempted to start listening on a port that already has a listener; port = " << port, LOG_CATEGORY_CONNECTION_MANAGER);
+			return false;
+		}
+	}
+
+	Listener* listener = new Listener;
+	bool result = listener->StartListening(port);
+	if (result)
+		m_ListenerMap.emplace(port, listener);
+
+	return result;
 }
 
 void ConnectionManager::StopAllListeners()

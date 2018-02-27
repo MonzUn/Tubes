@@ -279,12 +279,15 @@ void Tubes::RequestConnection( const std::string& address, uint16_t port )
 		MLOG_WARNING( "Attempted to request a connection although the Tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
 }
 
-void Tubes::StartListener( uint16_t port )
+bool Tubes::StartListener(uint16_t port)
 {
-	if ( m_Initialized )
-		m_ConnectionManager->StartListener( port );
+	bool result = false;
+	if (m_Initialized)
+		result = m_ConnectionManager->StartListener(port);
 	else
-		MLOG_WARNING( "Attempted to start listening on port " << port + " although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
+		MLOG_WARNING("Attempted to start listening on port " << port + " although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
+
+	return result;
 }
 
 void Tubes::StopAllListeners()
