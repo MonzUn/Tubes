@@ -134,12 +134,12 @@ bool Connection::SetBlockingMode( bool shouldBlock )
 	return result == 0;
 }
 
-bool Connection::SetNoDelay()
+bool Connection::SetNoDelay(bool noDelayOn)
 {
 	bool returnValue = true;
 
-	int flag	= 1;
-	int result	= setsockopt( m_Socket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>( &flag ), sizeof( int ) );
+	char flag = static_cast<char>(noDelayOn);
+	int result = setsockopt(m_Socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
 	if ( result < 0 )
 	{
 		LogAPIErrorMessage( "Failed to set TCP_NODELAY for socket with destination " + AddressToIPv4String(m_Address) + " (Error: " << result + ")", LOG_CATEGORY_CONNECTION );

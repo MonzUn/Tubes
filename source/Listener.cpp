@@ -90,7 +90,7 @@ void Listener::Listen()
 		{
 			Connection* connection = new Connection(incomingConnectionSocket, incomingConnectionInfo);
 			connection->SetBlockingMode(false);
-			connection->SetNoDelay();
+			connection->SetNoDelay(true);
 			m_AcceptedConnectionsLock.lock();
 			m_AcceptedConnections.push_back(connection);
 			m_AcceptedConnectionsLock.unlock();

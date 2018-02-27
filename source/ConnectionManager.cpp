@@ -272,7 +272,7 @@ void ConnectionManager::Connect( const std::string& address, Port port ) // TODO
 	connection->SetBlockingMode( false );
 	if (connection->Connect())
 	{
-		connection->SetNoDelay();
+		connection->SetNoDelay(true);
 
 		MLOG_INFO( "Connection attempt to " + address + " was successful!", LOG_CATEGORY_CONNECTION_MANAGER);
 		m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, ConnectionState::NewOutgoing) );
