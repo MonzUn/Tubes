@@ -40,9 +40,9 @@ Connection::Connection( Socket connectionSocket, const std::string& destinationA
 {
 	m_Socket	= connectionSocket;
 	m_Address	= TubesUtility::IPv4StringToAddress( destinationAddress ); // TODODB: Handle ipv6
-	m_Port	=  destinationPort;
+	m_Port		= destinationPort;
 
-	memset( &m_Sockaddr, 0, sizeof( sockaddr ) );
+	memset( &m_Sockaddr, 0, sizeof(sockaddr_in) );
 	m_Sockaddr.sin_family		= AF_INET;
 	m_Sockaddr.sin_addr.s_addr	= htonl( m_Address );
 	m_Sockaddr.sin_port			= htons( m_Port );
