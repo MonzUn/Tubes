@@ -181,7 +181,7 @@ void ConnectionManager::RequestConnection( const std::string& address, Port port
 	connectionThread.detach();
 }
 
-void ConnectionManager::Disconnect( ConnectionID connectionID )
+void ConnectionManager::Disconnect( ConnectionID connectionID ) // TODODB: Return boolean result
 {
 	auto& connectionIterator = m_Connections.find( connectionID );
 	if ( connectionIterator != m_Connections.end() )
