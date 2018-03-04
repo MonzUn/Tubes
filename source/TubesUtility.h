@@ -20,7 +20,7 @@
 
 namespace TubesUtility
 {
-	const int			MAX_MESSAGE_SIZE		= 512;				// This low message size cap will lower the risks of packet loss and/or corruption
+	const int			MAX_MESSAGE_SIZE = 512; // This low message size cap will lower the risks of packet loss and/or corruption
 
 	std::string			GetErrorName( int errorCode );
 	std::string			AddressToIPv4String( Address address );
