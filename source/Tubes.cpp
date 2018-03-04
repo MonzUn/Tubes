@@ -21,7 +21,7 @@
 
 namespace Tubes
 {
-	ConnectionManager*	m_ConnectionManager; // TODODB: Create an internal header to structure these variables and functions
+	ConnectionManager*	m_ConnectionManager;
 
 	std::unordered_map<ReplicatorID, MessageReplicator*>*	m_ReplicatorReferences;
 	TubesMessageReplicator*									m_TubesMessageReplicator;
