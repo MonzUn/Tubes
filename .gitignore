@@ -18,4 +18,5 @@ project/CMakeLocalDependenciesPaths.txt
 
 # Generated
 output/
-TODO.txt
+local/*
+!local/Dummy.txt
