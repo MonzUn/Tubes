@@ -128,7 +128,7 @@ bool Connection::SetBlockingMode( bool shouldBlock )
 #endif
 	if ( result != 0 )
 	{
-		MLOG_ERROR( "Failed to set socket to non blocking mode", LOG_CATEGORY_CONNECTION );
+		LogAPIErrorMessage("Failed to set socket to non blocking mode", LOG_CATEGORY_CONNECTION);
 	}
 
 	return result == 0;

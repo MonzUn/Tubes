@@ -13,7 +13,7 @@
 #define NOT_EXPECTING_PAYLOAD -1
 
 // Always output API related errors through this define or string constructors may overwrite errno
-#define LogAPIErrorMessage( outputMessage, logCategory ) { int __errorCode = GET_NETWORK_ERROR; MLOG_ERROR(outputMessage << " - Error (" << __errorCode << ") " << TubesUtility::GetErrorName(__errorCode), logCategory); } // TODODB: Go through the code and see where this output type is applicable
+#define LogAPIErrorMessage( outputMessage, logCategory ) { int __errorCode = GET_NETWORK_ERROR; MLOG_ERROR(outputMessage << " - Error (" << __errorCode << ") " << TubesUtility::GetErrorName(__errorCode), logCategory); }
 
 #define LOCALHOST_IP "127.0.0.1"
 #define TUBES_DEBUG 1
