@@ -4,6 +4,7 @@
 
 // TODODB: Add pinging and latency measurements
 // TODODB: Standardize ordering of include statements
+// TODODB: Standardize code (Remove whitespaces in paramter lists and whatnot)
 
 class	MessageReplicator;
 struct	Message;
