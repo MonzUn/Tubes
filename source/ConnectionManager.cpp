@@ -1,6 +1,6 @@
 #include "ConnectionManager.h"
-#include "interface/messaging/MessagingTypes.h"
-#include "interface/TubesSettings.h"
+#include "Interface/Messaging/MessagingTypes.h"
+#include "Interface/TubesSettings.h"
 #include "Connection.h"
 #include "Listener.h"
 #include "TubesErrors.h"

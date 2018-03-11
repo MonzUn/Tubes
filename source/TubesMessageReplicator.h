@@ -1,5 +1,5 @@
 #pragma once
-#include "interface/messaging/MessageReplicator.h"
+#include "Interface/messaging/MessageReplicator.h"
 
 #define REPLICATOR_DEBUG 1
 

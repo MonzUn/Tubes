@@ -5,7 +5,7 @@
 #include <MUtilityPlatformDefinitions.h>
 #include <MUtilityByte.h>
 #include <MUtilityDataSizes.h>
-#include "interface/messaging/MessagingTypes.h"
+#include "Interface/messaging/MessagingTypes.h"
 #include "TubesErrors.h"
 
 #if PLATFORM != PLATFORM_WINDOWS // winsock already defines this on windows

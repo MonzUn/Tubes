@@ -1,6 +1,6 @@
 #pragma once
 #include "TubesMessageBase.h"
-#include "interface/TubesTypes.h"
+#include "Interface/TubesTypes.h"
 
 using Tubes::ConnectionID;
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "interface/messaging/Message.h"
+#include "Interface/messaging/Message.h"
 #include "TubesMessageReplicator.h"
 
 struct TubesMessage : Message

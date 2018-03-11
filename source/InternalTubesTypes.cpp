@@ -1,5 +1,5 @@
 #include "InternalTubesTypes.h"
-#include "interface/messaging/MessagingTypes.h"
+#include "Interface/messaging/MessagingTypes.h"
 #include "TubesUtility.h"
 
 ReceiveBuffer::ReceiveBuffer()

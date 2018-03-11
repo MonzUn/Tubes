@@ -1,5 +1,5 @@
 #pragma once
-#include "messaging/MessagingTypes.h"
+#include "Messaging/MessagingTypes.h"
 #include "TubesTypes.h" // Exposes the relevant types to the external application
 
 // TODODB: Add pinging and latency measurements
