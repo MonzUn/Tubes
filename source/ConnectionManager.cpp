@@ -256,7 +256,7 @@ bool ConnectionManager::StopListener(Port port)
 		result = true;
 	}
 	else
-		MLOG_WARNING("Attempted to stop non existent listener for port " << port, LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_WARNING("Attempted to stop nonexistent listener for port " << port, LOG_CATEGORY_CONNECTION_MANAGER);
 	return result;
 }
 
@@ -325,7 +325,7 @@ Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const
 	if (m_Connections.find(connectionID) != m_Connections.end())
 		toReturn = m_Connections.at(connectionID);
 	else
-		MLOG_WARNING( "Attempted to fetch unexsisting connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_WARNING( "Attempted to fetch nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
 
 	return toReturn;
 }
@@ -333,4 +333,30 @@ Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const
 const std::unordered_map<ConnectionID, Connection*>& ConnectionManager::GetVerifiedConnections() const
 {
 	return m_Connections;
+}
+
+std::string ConnectionManager::GetAddressOfConnection(ConnectionID connectionID) const
+{
+	std::string toReturn = "";
+	if (m_Connections.find(connectionID) != m_Connections.end())
+	{
+		toReturn = TubesUtility::AddressToIPv4String(m_Connections.at(connectionID)->GetAddress());
+	}
+	else
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
+
+	return toReturn;
+}
+
+Port ConnectionManager::GetPortOfConnection(ConnectionID connectionID) const
+{
+	Port toReturn = TUBES_PORT_ANY;
+	if (m_Connections.find(connectionID) != m_Connections.end())
+	{
+		toReturn = m_Connections.at(connectionID)->GetPort();
+	}
+	else
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
+
+	return toReturn;
 }

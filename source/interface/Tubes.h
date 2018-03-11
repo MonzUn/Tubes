@@ -1,6 +1,7 @@
 #pragma once
 #include "Messaging/MessagingTypes.h"
 #include "TubesTypes.h" // Exposes the relevant types to the external application
+#include <string>
 
 // TODODB: Add pinging and latency measurements
 // TODODB: Standardize ordering of include statements
@@ -34,4 +35,7 @@ namespace Tubes
 	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
 
 	bool IsValidIPv4Address( const char* ipv4String );
+
+	std::string GetAddressOfConnection(ConnectionID connectionID);
+	uint16_t GetPortOfConnection(ConnectionID connectionID);
 };

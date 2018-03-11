@@ -10,7 +10,7 @@ using namespace Tubes;
 
 class TubesMessageReplicator;
 
-class ConnectionManager
+class ConnectionManager // TODODB: Make this a namespace instead
 {
 public:
 	~ConnectionManager();
@@ -32,6 +32,9 @@ public:
 
 	Connection* GetConnection( ConnectionID connectionID ) const;
 	const std::unordered_map<ConnectionID, Connection*>& GetVerifiedConnections() const;
+
+	std::string GetAddressOfConnection(ConnectionID connectionID) const;
+	uint16_t GetPortOfConnection(ConnectionID connectionID) const;
 
 private:
 

@@ -378,3 +378,13 @@ bool Tubes::IsValidIPv4Address(const char* ipv4String)
 #endif
 	return result != 0;
 }
+
+std::string Tubes::GetAddressOfConnection(ConnectionID connectionID)
+{
+	return m_ConnectionManager->GetAddressOfConnection(connectionID);
+}
+
+uint16_t Tubes::GetPortOfConnection(ConnectionID connectionID)
+{
+	return m_ConnectionManager->GetPortOfConnection(connectionID);
+}
