@@ -2,6 +2,9 @@
 #include "messaging/MessagingTypes.h"
 #include "TubesTypes.h" // Exposes the relevant types to the external application
 
+// TODODB: Add pinging and latency measurements
+// TODODB: Standardize ordering of include statements
+
 class	MessageReplicator;
 struct	Message;
 
