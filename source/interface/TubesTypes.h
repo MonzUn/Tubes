@@ -1,7 +1,7 @@
 #pragma once
 #include <MUtilityExternal/CallbackRegister.h>
 
-#define INVALID_CONNECTION_ID -1
+#define INVALID_TUBES_CONNECTION_ID -1
 
 namespace Tubes // TODODB: Replace the callback handles so that Tubes dopesn't rely on external code for this
 {

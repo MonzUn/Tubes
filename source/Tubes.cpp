@@ -169,7 +169,7 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 			const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 
 #if TUBES_DEBUG == 1
-			if ( exception != INVALID_CONNECTION_ID )
+			if ( exception != INVALID_TUBES_CONNECTION_ID )
 			{
 				bool exceptionExists = false;
 				for ( auto& idAndConnection : connections )
