@@ -1,5 +1,5 @@
 #pragma once
-#include "interface/Tubes.h" // TODODB: Remove this when callbacks have been changed to no longer depend upon the externals in MUTility (Causes struct redefinition is TubesTypes.h is included instead)
+#include "Interface/Tubes.h" // TODODB: Remove this when callbacks have been changed to no longer depend upon the externals in MUTility (Causes struct redefinition is TubesTypes.h is included instead)
 
 #include "InternalTubesTypes.h"
 #include "Connection.h"
