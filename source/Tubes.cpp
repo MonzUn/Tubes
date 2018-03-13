@@ -273,10 +273,19 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 
 void Tubes::RequestConnection( const std::string& address, uint16_t port )
 {
-	if ( m_Initialized )
-		m_ConnectionManager->RequestConnection( address, port );
-	else
-		MLOG_WARNING( "Attempted to request a connection although the Tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
+	if (!m_Initialized) // TODODB: Create a macro for doing this error check and apply it to all relevant interface functions 
+	{
+		return;
+		MLOG_WARNING("Attempted to request a connection although the Tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
+	}
+
+	if (address == "")
+	{
+		MLOG_WARNING("Attempted to connect using empty string as address", LOG_CATEGORY_GENERAL);
+		return;
+	}
+
+	m_ConnectionManager->RequestConnection(address, port);
 }
 
 bool Tubes::StartListener(uint16_t port)
