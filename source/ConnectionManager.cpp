@@ -175,6 +175,15 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 	}
 }
 
+void ConnectionManager::HandleFailedConnectionAttempts()
+{
+	ConnectionAttemptResultData result;
+	while (FailedConnectionAttemptsQueue.Consume(result))
+	{
+		m_ConnectionFailedCallbacks.TriggerCallbacks(result);
+	}
+}
+
 void ConnectionManager::RequestConnection( const std::string& address, Port port )
 {
 	std::thread connectionThread = std::thread( &ConnectionManager::Connect, this, address, port ); // TODODB: Use a thread pool
@@ -296,6 +305,16 @@ bool ConnectionManager::UnregisterDisconnectionCallback( DisconnectionCallbackHa
 	return m_DisconnectionCallbacks.UnregisterCallback( handle );
 }
 
+ConnectionFailedCallbackHandle ConnectionManager::RegisterConnectionFailedCallback(ConnectionFailedCallbackFunction callbackFunction)
+{
+	return m_ConnectionFailedCallbacks.RegisterCallback(callbackFunction);
+}
+
+bool ConnectionManager::UnregisterConnectionFailedCallback(ConnectionFailedCallbackHandle handle)
+{
+	return m_ConnectionFailedCallbacks.UnregisterCallback(handle);
+}
+
 void ConnectionManager::Connect( const std::string& address, Port port )
 {
 	// Set up the socket
@@ -316,7 +335,10 @@ void ConnectionManager::Connect( const std::string& address, Port port )
 		m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, ConnectionState::NewOutgoing) );
 	}
 	else
+	{
+		FailedConnectionAttemptsQueue.Produce(ConnectionAttemptResultData(ConnectionAttemptResult::FAILED_TIMEOUT, AddressToIPv4String(connection->GetAddress()), connection->GetPort()));
 		delete connection;
+	}
 }
 
 Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const

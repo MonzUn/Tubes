@@ -13,8 +13,6 @@
 #define SOCKET_ERROR	-1
 #endif
 
-#define TUBES_PORT_ANY 0
-
 typedef uint32_t	Address;
 typedef uint16_t	Port;
 typedef int64_t		Socket;

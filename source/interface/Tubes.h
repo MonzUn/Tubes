@@ -33,6 +33,8 @@ namespace Tubes
 	bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
 	DisconnectionCallbackHandle RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction );
 	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
+	ConnectionFailedCallbackHandle RegisterConnectionFailedCallback(ConnectionFailedCallbackFunction callbackFunction);
+	bool UnregisterConnectionFailedCallback(ConnectionFailedCallbackHandle handle);
 
 	bool IsValidIPv4Address( const char* ipv4String );
 

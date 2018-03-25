@@ -102,6 +102,7 @@ void Tubes::Update()
 	if ( m_Initialized )
 	{
 		m_ConnectionManager->VerifyNewConnections( *m_TubesMessageReplicator );
+		m_ConnectionManager->HandleFailedConnectionAttempts();
 
 		// Send queued messages
 		std::vector<ConnectionID> toDisconnect;
@@ -285,6 +286,8 @@ void Tubes::RequestConnection( const std::string& address, uint16_t port )
 		return;
 	}
 
+	// TODODB: Validate address and port (call conntaionfailed callback when failed occurs)
+
 	m_ConnectionManager->RequestConnection(address, port);
 }
 
@@ -372,6 +375,24 @@ bool Tubes::UnregisterDisconnectionCallback(DisconnectionCallbackHandle handle)
 {
 	if(m_Initialized)
 		return m_ConnectionManager->UnregisterDisconnectionCallback( handle );
+
+	return false;
+}
+
+ConnectionFailedCallbackHandle Tubes::RegisterConnectionFailedCallback(ConnectionFailedCallbackFunction callbackFunction)
+{
+	ConnectionFailedCallbackHandle toReturn;
+	if (m_Initialized)
+		toReturn = m_ConnectionManager->RegisterConnectionFailedCallback(callbackFunction);
+	else
+		MLOG_WARNING("Attempted to register callback although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
+	return toReturn;
+}
+
+bool Tubes::UnregisterConnectionFailedCallback(ConnectionFailedCallbackHandle handle)
+{
+	if (m_Initialized)
+		return m_ConnectionManager->UnregisterConnectionFailedCallback(handle);
 
 	return false;
 }

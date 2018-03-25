@@ -1,10 +1,10 @@
 #pragma once
 #include "Interface/Tubes.h" // TODODB: Remove this when callbacks have been changed to no longer depend upon the externals in MUTility (Causes struct redefinition is TubesTypes.h is included instead)
-
 #include "InternalTubesTypes.h"
 #include "Connection.h"
 #include "Listener.h"
 #include <MUtilityExternal/CallbackRegister.h>
+#include <MUtilityLocklessQueue.h>
 
 using namespace Tubes;
 
@@ -16,6 +16,7 @@ public:
 	~ConnectionManager();
 
 	void VerifyNewConnections( TubesMessageReplicator& replicator );
+	void HandleFailedConnectionAttempts();
 		 
 	void RequestConnection( const std::string& address, Port port );
 	void Disconnect( ConnectionID connectionID );
@@ -29,6 +30,8 @@ public:
 	bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
 	DisconnectionCallbackHandle RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction);
 	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
+	ConnectionFailedCallbackHandle RegisterConnectionFailedCallback(ConnectionFailedCallbackFunction callbackFunction);
+	bool UnregisterConnectionFailedCallback(ConnectionFailedCallbackHandle handle);
 
 	Connection* GetConnection( ConnectionID connectionID ) const;
 	const std::unordered_map<ConnectionID, Connection*>& GetVerifiedConnections() const;
@@ -46,6 +49,8 @@ private:
 
 	CallbackRegister<ConnectionCallbackTag, void, uint32_t> m_ConnectionCallbacks;
 	CallbackRegister<DisconnectionCallbackTag, void, uint32_t> m_DisconnectionCallbacks;
+	CallbackRegister<ConnectionFailedCallbackTag, void, const ConnectionAttemptResultData&> m_ConnectionFailedCallbacks;
+	MUtility::LocklessQueue<ConnectionAttemptResultData> FailedConnectionAttemptsQueue;
 
 	ConnectionID m_NextConnectionID = 1;
 }; 
