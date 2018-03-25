@@ -169,7 +169,7 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 			const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 
 #if TUBES_DEBUG == 1
-			if ( exception != INVALID_TUBES_CONNECTION_ID )
+			if ( exception != TUBES_INVALID_CONNECTION_ID )
 			{
 				bool exceptionExists = false;
 				for ( auto& idAndConnection : connections )
@@ -388,12 +388,12 @@ bool Tubes::IsValidIPv4Address(const char* ipv4String)
 	return result != 0;
 }
 
-std::string Tubes::GetAddressOfConnection(ConnectionID connectionID)
+std::string Tubes::GetAddressOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
 {
 	return m_ConnectionManager->GetAddressOfConnection(connectionID);
 }
 
-uint16_t Tubes::GetPortOfConnection(ConnectionID connectionID)
+uint16_t Tubes::GetPortOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
 {
 	return m_ConnectionManager->GetPortOfConnection(connectionID);
 }

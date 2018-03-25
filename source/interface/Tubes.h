@@ -17,7 +17,7 @@ namespace Tubes
 	void Update();
 
 	void SendToConnection( const Message* message, ConnectionID destinationConnectionID );
-	void SendToAll( const Message* message, ConnectionID exception = INVALID_TUBES_CONNECTION_ID );
+	void SendToAll( const Message* message, ConnectionID exception = TUBES_INVALID_CONNECTION_ID );
 	void Receive( std::vector<Message*>& outMessages, std::vector<ConnectionID>* outSenderIDs = nullptr );
 
 	void RequestConnection( const std::string& address, uint16_t port );
