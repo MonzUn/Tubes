@@ -12,10 +12,10 @@ public:
 	const MESSAGE_TYPE_ENUM_UNDELYING_TYPE	GetUserInterests() const;
 	const MESSAGE_TYPE_ENUM_UNDELYING_TYPE	GetSimInterests() const;
 	const std::string&						GetNameAsSubscriber() const;
-	void										AddUserMessage( const UserMessage* message );
-	void										AddSimMessage( const SimulationMessage* message );
-	void										ClearUserMessages();
-	void										ClearSimMessages();
+	void									AddUserMessage( const UserMessage* message );
+	void									AddSimMessage( const SimulationMessage* message );
+	void									ClearUserMessages();
+	void									ClearSimMessages();
 
 	bool operator==( const Subscriber& rhs );
 

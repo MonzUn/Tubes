@@ -7,7 +7,7 @@
 class MessageReplicator
 {
 public:
-							MessageReplicator( ReplicatorID id );
+	MessageReplicator( ReplicatorID id );
 
 	virtual MUtility::Byte*	SerializeMessage( const Message* message, MessageSize* outMessageSize = nullptr, MUtility::Byte* optionalWritingBuffer = nullptr ) = 0;
 	virtual Message*		DeserializeMessage( const MUtility::Byte* const buffer ) = 0; // TODODB: Return how many bytes were read instead // TODODB: Take optionalwritingbuffer as parameter
