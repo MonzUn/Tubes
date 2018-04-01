@@ -20,19 +20,19 @@ if(MSVC)
 endif(MSVC)
 
 # Include directory
-file(RELATIVE_PATH IncludeDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/include)
+file(RELATIVE_PATH IncludeDirectoryRelative ${${PROJECT_NAME}_SOURCE_DIR} "${ProjectRootAbsolute}/include")
 get_filename_component(IncludeDirectoryAbsolute ${IncludeDirectoryRelative} ABSOLUTE)
 
 # Debug library directory
-file(RELATIVE_PATH DebugLibraryDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/lib/debug/x64)
+file(RELATIVE_PATH DebugLibraryDirectoryRelative ${${PROJECT_NAME}_SOURCE_DIR} "${ProjectRootAbsolute}/lib/debug/x64")
 get_filename_component(DebugLibraryDirectoryAbsolute ${DebugLibraryDirectoryRelative} ABSOLUTE)
 
 # Release library directory
-file(RELATIVE_PATH ReleaseLibraryDirectoryRelative ${Tubes_SOURCE_DIR} ${ProjectRootAbsolute}/lib/release/x64)
+file(RELATIVE_PATH ReleaseLibraryDirectoryRelative ${${PROJECT_NAME}_SOURCE_DIR} "${ProjectRootAbsolute}/lib/release/x64")
 get_filename_component(ReleaseLibraryDirectoryAbsolute ${ReleaseLibraryDirectoryRelative} ABSOLUTE)
 
 # Find MUtility
-set(MUtilityLocalIncludePath ${IncludeDirectoryAbsolute}/MUtility)
+set(MUtilityLocalIncludePath "${IncludeDirectoryAbsolute}/MUtility")
 set(MUtilityLocalDebugLibPath "${DebugLibraryDirectoryAbsolute}/MUtility")
 set(MUtilityLocalReleaseLibPath "${ReleaseLibraryDirectoryAbsolute}/MUtility")
 
@@ -76,7 +76,7 @@ ADD_LIBRARY( ${PROJECT_NAME} STATIC
 set_property(TARGET ${PROJECT_NAME} PROPERTY INCLUDE_DIRECTORIES ${IncludeDirectoryList})
 
 # Set output directory
-set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ProjectRootAbsolute}/output/)
+set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${ProjectRootAbsolute}/output/")
 
 if(MUtilityRootPath)
 	add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${MUtilityIncludePath} ${MUtilityLocalIncludePath})
