@@ -69,7 +69,7 @@ Connection::~Connection()
 	}
 }
 
-bool Connection::Connect() // TODODB: Doesn't this function block for the timeout period? Thread?
+bool Connection::Connect()
 {
 	// Set up timeout variables
 	timeval timeOut;

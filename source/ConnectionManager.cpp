@@ -187,7 +187,7 @@ void ConnectionManager::HandleFailedConnectionAttempts()
 void ConnectionManager::RequestConnection( const std::string& address, Port port )
 {
 	std::thread connectionThread = std::thread( &ConnectionManager::Connect, this, address, port ); // TODODB: Use a thread pool
-	connectionThread.detach();
+	connectionThread.detach(); // TODODB: Handle living threads on shutdown (Connection attempt may be in progress)
 }
 
 void ConnectionManager::Disconnect( ConnectionID connectionID ) // TODODB: Return boolean result
