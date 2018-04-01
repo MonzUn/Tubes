@@ -8,6 +8,7 @@
 #include "TubesMessages.h"
 #include "TubesUtility.h"
 #include <MUtilityLog.h>
+#include <MUtilityThreading.h>
 #include <cassert>
 #include <thread>
 
@@ -18,10 +19,26 @@
 
 #define LOG_CATEGORY_CONNECTION_MANAGER "TubesConnectionManager"
 
+using namespace Tubes;
 using namespace TubesUtility;
+
+// ---------- PUBLIC ----------
+
+ConnectionManager::ConnectionManager()
+{
+	m_RunConnectionThread = true;
+	m_ConnectionThread = std::thread(&ConnectionManager::ProcessConnectionRequests, this);
+}
 
 ConnectionManager::~ConnectionManager()
 {
+	// Stop the connection thread
+	m_RunConnectionThread = false;
+	m_ConnectionAttemptLockCondition.notify_one();
+	MUtilityThreading::JoinThread(m_ConnectionThread);
+
+	m_RequestedConnections.Clear();
+
 	DisconnectAll();
 }
 
@@ -120,7 +137,8 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 				m_UnverifiedConnections.erase(m_UnverifiedConnections.begin() + i--);
 
 				MLOG_INFO("An incoming connection with destination " + TubesUtility::AddressToIPv4String(m_Connections.at(connectionID)->GetAddress()) + " was accepted", LOG_CATEGORY_CONNECTION_MANAGER);
-				m_ConnectionCallbacks.TriggerCallbacks(idMessage.ID);
+				ConnectionAttemptResultData connectionResult = ConnectionAttemptResultData(ConnectionAttemptResult::SUCCESS_INCOMING, AddressToIPv4String(connection->GetAddress()), connection->GetPort(), connectionID);
+				m_ConnectionCallbacks.TriggerCallbacks(connectionResult);
 			} break;
 
 			case ConnectionState::NewOutgoing:
@@ -128,36 +146,37 @@ void ConnectionManager::VerifyNewConnections( TubesMessageReplicator& replicator
 				Message* message = nullptr;
 				ReceiveResult result;
 				result = connection->Receive( replicatorMap, message );
-				switch( result )
+				switch(result)
 				{
 					case ReceiveResult::Fullmessage:
 					{
 						if ( message->Type == TubesMessages::CONNECTION_ID )
 						{
-							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>( message );
+							ConnectionIDMessage* idMessage = static_cast<ConnectionIDMessage*>(message);
 
 							m_Connections.emplace( idMessage->ID, connection);
 							m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
 
 							MLOG_INFO( "An outgoing connection with destination " + TubesUtility::AddressToIPv4String( m_Connections.at( idMessage->ID )->GetAddress() ) + " was accepted", LOG_CATEGORY_CONNECTION_MANAGER);
-							m_ConnectionCallbacks.TriggerCallbacks( idMessage->ID );
-							free( message );
+							ConnectionAttemptResultData connectionResult = ConnectionAttemptResultData(ConnectionAttemptResult::SUCCESS_OUTGOING, AddressToIPv4String(connection->GetAddress()), connection->GetPort(), idMessage->ID );
+							m_ConnectionCallbacks.TriggerCallbacks(connectionResult);
+							free(message);
 						}
 						else
 						{
-							MLOG_WARNING( "Received an unexpected message type while verifying socket; message type = " << message->Type, LOG_CATEGORY_CONNECTION_MANAGER);
-							free( message );
+							MLOG_WARNING("Received an unexpected message type while verifying socket; message type = " << message->Type, LOG_CATEGORY_CONNECTION_MANAGER);
+							free(message);
 						}
 					} break;
 
 					case ReceiveResult::GracefulDisconnect:
 					case ReceiveResult::ForcefulDisconnect:
 					{
-						MLOG_INFO( "An unverified outgoing connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " was disconnected during handshake", LOG_CATEGORY_CONNECTION_MANAGER);
+						MLOG_INFO("An unverified outgoing connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress()) + " was disconnected during handshake", LOG_CATEGORY_CONNECTION_MANAGER);
 
 						connection->Disconnect();
 						delete connection;
-						m_UnverifiedConnections.erase( m_UnverifiedConnections.begin() + i-- );
+						m_UnverifiedConnections.erase(m_UnverifiedConnections.begin() + i--);
 					} break;
 
 					case ReceiveResult::Empty:
@@ -180,32 +199,32 @@ void ConnectionManager::HandleFailedConnectionAttempts()
 	ConnectionAttemptResultData result;
 	while (FailedConnectionAttemptsQueue.Consume(result))
 	{
-		m_ConnectionFailedCallbacks.TriggerCallbacks(result);
+		m_ConnectionCallbacks.TriggerCallbacks(result);
 	}
 }
 
-void ConnectionManager::RequestConnection( const std::string& address, Port port )
+void ConnectionManager::RequestConnection(const std::string& address, Port port)
 {
-	std::thread connectionThread = std::thread( &ConnectionManager::Connect, this, address, port ); // TODODB: Use a thread pool
-	connectionThread.detach(); // TODODB: Handle living threads on shutdown (Connection attempt may be in progress)
+	m_RequestedConnections.Produce(ConnectionAttemptData(address, port));
+	m_ConnectionAttemptLockCondition.notify_one();
 }
 
-void ConnectionManager::Disconnect( ConnectionID connectionID ) // TODODB: Return boolean result
+void ConnectionManager::Disconnect(ConnectionID connectionID) // TODODB: Return boolean result
 {
-	auto& connectionIterator = m_Connections.find( connectionID );
-	if ( connectionIterator != m_Connections.end() )
+	auto& connectionIterator = m_Connections.find(connectionID);
+	if (connectionIterator != m_Connections.end())
 	{
-		Connection* connection = m_Connections.at( connectionID );
+		Connection* connection = m_Connections.at(connectionID);
 		connection->Disconnect();
-		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress() ) + " has been disconnected", LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_INFO("A connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress()) + " has been disconnected", LOG_CATEGORY_CONNECTION_MANAGER);
 
 		delete connection;
-		m_Connections.erase( connectionIterator );
+		m_Connections.erase(connectionIterator);
 
-		m_DisconnectionCallbacks.TriggerCallbacks( connectionID );
+		m_DisconnectionCallbacks.TriggerCallbacks(connectionID);
 	}
 	else
-		MLOG_WARNING( "Attempted to disconnect socket with id: " << connectionID + " but no socket with that ID was found", LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_WARNING("Attempted to disconnect socket with id: " << connectionID + " but no socket with that ID was found", LOG_CATEGORY_CONNECTION_MANAGER);
 }
 
 void ConnectionManager::DisconnectAll()
@@ -285,9 +304,9 @@ bool ConnectionManager::StopAllListeners()
 	return m_ListenerMap.empty();
 }
 
-ConnectionCallbackHandle ConnectionManager::RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction )
+ConnectionCallbackHandle ConnectionManager::RegisterConnectionCallback(ConnectionCallbackFunction callbackFunction)
 {
-	return m_ConnectionCallbacks.RegisterCallback( callbackFunction );
+	return m_ConnectionCallbacks.RegisterCallback(callbackFunction);
 }
 
 bool ConnectionManager::UnregisterConnectionCallback( ConnectionCallbackHandle handle )
@@ -305,38 +324,47 @@ bool ConnectionManager::UnregisterDisconnectionCallback( DisconnectionCallbackHa
 	return m_DisconnectionCallbacks.UnregisterCallback( handle );
 }
 
-ConnectionFailedCallbackHandle ConnectionManager::RegisterConnectionFailedCallback(ConnectionFailedCallbackFunction callbackFunction)
+// ---------- PRIVATE ----------
+
+void ConnectionManager::ProcessConnectionRequests()
 {
-	return m_ConnectionFailedCallbacks.RegisterCallback(callbackFunction);
+	m_ConnectionAttemptLock = std::unique_lock<std::mutex>(m_ConnectionAttemptLockMutex);
+	ConnectionAttemptData connectionData;
+	while (m_RunConnectionThread)
+	{
+		if (m_RequestedConnections.Consume(connectionData))
+		{
+			Connect(connectionData.Address, connectionData.Port);
+		}
+		else
+			m_ConnectionAttemptLockCondition.wait(m_ConnectionAttemptLock);
+	}
+	m_ConnectionAttemptLock.unlock();
 }
 
-bool ConnectionManager::UnregisterConnectionFailedCallback(ConnectionFailedCallbackHandle handle)
-{
-	return m_ConnectionFailedCallbacks.UnregisterCallback(handle);
-}
-
-void ConnectionManager::Connect( const std::string& address, Port port )
+void ConnectionManager::Connect(const std::string& address, Port port)
 {
 	// Set up the socket
-	Socket connectionSocket = static_cast<int64_t>( socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ); // Address Family = INET and the protocol to be used is TCP
-	if ( connectionSocket <= 0 )
+	Socket connectionSocket = static_cast<Socket>(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)); // Address Family = INET and the protocol to be used is TCP
+	if (connectionSocket <= 0)
 	{
-		LogAPIErrorMessage( "Failed to create socket", LOG_CATEGORY_CONNECTION_MANAGER);
+		LogAPIErrorMessage("Failed to create socket", LOG_CATEGORY_CONNECTION_MANAGER);
 		return;
 	}
 
-	Connection* connection = new Connection( connectionSocket, address, port );
-	connection->SetBlockingMode( false );
-	if (connection->Connect())
+	Connection* connection = new Connection(connectionSocket, address, port);
+	connection->SetBlockingMode(false);
+	ConnectionAttemptResult result = connection->Connect();
+	if (result == ConnectionAttemptResult::SUCCESS_OUTGOING)
 	{
 		connection->SetNoDelay(true);
 
 		MLOG_INFO( "Connection attempt to " + address + " was successful!", LOG_CATEGORY_CONNECTION_MANAGER);
-		m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>( connection, ConnectionState::NewOutgoing) );
+		m_UnverifiedConnections.push_back( std::pair<Connection*, ConnectionState>(connection, ConnectionState::NewOutgoing));
 	}
 	else
 	{
-		FailedConnectionAttemptsQueue.Produce(ConnectionAttemptResultData(ConnectionAttemptResult::FAILED_TIMEOUT, AddressToIPv4String(connection->GetAddress()), connection->GetPort()));
+		FailedConnectionAttemptsQueue.Produce(ConnectionAttemptResultData(result, AddressToIPv4String(connection->GetAddress()), connection->GetPort()));
 		delete connection;
 	}
 }

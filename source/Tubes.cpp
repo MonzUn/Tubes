@@ -19,6 +19,8 @@
 
 #define LOG_CATEGORY_GENERAL "Tubes"
 
+using namespace Tubes;
+
 namespace Tubes
 {
 	ConnectionManager*	m_ConnectionManager;
@@ -343,7 +345,7 @@ void Tubes::RegisterReplicator( MessageReplicator* replicator ) // TODODB: Add u
 		MLOG_WARNING( "Attempted to register replicator although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
 }
 
-ConnectionCallbackHandle Tubes::RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction )
+ConnectionCallbackHandle Tubes::RegisterConnectionCallback(ConnectionCallbackFunction callbackFunction)
 {
 	ConnectionCallbackHandle toReturn;
 	if (m_Initialized)
@@ -375,24 +377,6 @@ bool Tubes::UnregisterDisconnectionCallback(DisconnectionCallbackHandle handle)
 {
 	if(m_Initialized)
 		return m_ConnectionManager->UnregisterDisconnectionCallback( handle );
-
-	return false;
-}
-
-ConnectionFailedCallbackHandle Tubes::RegisterConnectionFailedCallback(ConnectionFailedCallbackFunction callbackFunction)
-{
-	ConnectionFailedCallbackHandle toReturn;
-	if (m_Initialized)
-		toReturn = m_ConnectionManager->RegisterConnectionFailedCallback(callbackFunction);
-	else
-		MLOG_WARNING("Attempted to register callback although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
-	return toReturn;
-}
-
-bool Tubes::UnregisterConnectionFailedCallback(ConnectionFailedCallbackHandle handle)
-{
-	if (m_Initialized)
-		return m_ConnectionManager->UnregisterConnectionFailedCallback(handle);
 
 	return false;
 }

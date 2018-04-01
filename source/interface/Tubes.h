@@ -29,12 +29,10 @@ namespace Tubes
 
 	void RegisterReplicator( MessageReplicator* replicator );
 
-	ConnectionCallbackHandle RegisterConnectionCallback( ConnectionCallbackFunction callbackFunction ); // TODODB: Make a generic function for registering and unregistering all callbacks
+	ConnectionCallbackHandle RegisterConnectionCallback(ConnectionCallbackFunction callbackFunction); // TODODB: Make a generic function for registering and unregistering all callbacks
 	bool UnregisterConnectionCallback( ConnectionCallbackHandle handle );
 	DisconnectionCallbackHandle RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction );
 	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
-	ConnectionFailedCallbackHandle RegisterConnectionFailedCallback(ConnectionFailedCallbackFunction callbackFunction);
-	bool UnregisterConnectionFailedCallback(ConnectionFailedCallbackHandle handle);
 
 	bool IsValidIPv4Address( const char* ipv4String );
 

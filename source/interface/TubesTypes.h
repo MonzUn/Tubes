@@ -16,7 +16,9 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 		FAILED_INVALID_IP,
 		FAILED_INVALID_PORT,
 		FAILED_TIMEOUT,
-		//SUCCESS, // TODODB: Use this struct for successful attempts as well
+		FAILED_INTERNAL_ERROR,
+		SUCCESS_INCOMING,
+		SUCCESS_OUTGOING,
 
 		INVALID
 	};
@@ -35,11 +37,7 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 
 	struct	ConnectionCallbackTag {};
 	typedef Handle<ConnectionCallbackTag, int, -1>	ConnectionCallbackHandle;
-	typedef std::function<void(ConnectionID)>		ConnectionCallbackFunction;
-
-	struct	ConnectionFailedCallbackTag {};
-	typedef Handle<ConnectionFailedCallbackTag, int, -1>			ConnectionFailedCallbackHandle;
-	typedef std::function<void(ConnectionAttemptResultData result)>	ConnectionFailedCallbackFunction;
+	typedef std::function<void(ConnectionAttemptResultData)> ConnectionCallbackFunction;
 
 	struct	DisconnectionCallbackTag {};
 	typedef Handle<DisconnectionCallbackTag, int, -1>	DisconnectionCallbackHandle;

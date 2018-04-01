@@ -1,4 +1,5 @@
 #pragma once
+#include "Interface/TubesTypes.h"
 #include "InternalTubesTypes.h"
 #include "TubesMessageReplicator.h"
 #include <queue>
@@ -20,24 +21,24 @@ public:
 	Connection( Socket connectionSocket, const sockaddr_in& destination );
 	~Connection();
 
-	bool					Connect();
-	void					Disconnect();
-	bool					SetBlockingMode( bool shouldBlock );
-	bool					SetNoDelay(bool noDelayOn);
+	Tubes::ConnectionAttemptResult	Connect();
+	void							Disconnect();
 
+	SendResult		SerializeAndSendMessage(const Message& message, MessageReplicator& replicator);
+	ReceiveResult	Receive(const std::unordered_map<ReplicatorID, MessageReplicator*>& replicators, Message*& outMessage);
 
-	SendResult				SerializeAndSendMessage(const Message& message, MessageReplicator& replicator);
-	ReceiveResult			Receive(const std::unordered_map<ReplicatorID, MessageReplicator*>& replicators, Message*& outMessage);
+	SendResult SendQueuedMessages();
 
-	SendResult				SendQueuedMessages();
+	bool operator == ( const Connection& other ) const { return this->m_Address == other.m_Address && this->m_Socket == other.m_Socket; }
+	bool operator != ( const Connection& other ) const { return this->m_Address != other.m_Address || this->m_Socket != other.m_Socket; }
 
-	bool					operator == ( const Connection& other ) const { return this->m_Address == other.m_Address && this->m_Socket == other.m_Socket; }
-	bool					operator != ( const Connection& other ) const { return this->m_Address != other.m_Address || this->m_Socket != other.m_Socket; }
+	Address	GetAddress() const { return m_Address; }
+	Port	GetPort() const { return m_Port; }
 
-	Address					GetAddress() const { return m_Address; }
-	Port					GetPort() const { return m_Port; }
+	bool	SetBlockingMode(bool shouldBlock);
+	bool	SetNoDelay(bool noDelayOn);
 
-	static uint32_t			ConnectionTimeout;
+	static uint32_t ConnectionTimeout;
 
 private:
 	struct MessageAndSize

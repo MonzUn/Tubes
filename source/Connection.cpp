@@ -1,6 +1,7 @@
 #include "Connection.h"
-#include "TubesUtility.h"
+#include "Interface/TubesTypes.h"
 #include "TubesErrors.h"
+#include "TubesUtility.h"
 #include <MUtilityLog.h>
 #include <MUtilitySerialization.h>
 
@@ -28,6 +29,7 @@
 #define SHOULD_WAIT_FOR_TIMEOUT static_cast<bool>( GET_NETWORK_ERROR == EINPROGRESS )
 #endif
 
+using namespace Tubes;
 using namespace TubesUtility;
 using MUtility::Byte;
 
@@ -69,7 +71,7 @@ Connection::~Connection()
 	}
 }
 
-bool Connection::Connect()
+Tubes::ConnectionAttemptResult Connection::Connect()
 {
 	// Set up timeout variables
 	timeval timeOut;
@@ -87,23 +89,22 @@ bool Connection::Connect()
 	if ((result = connect(m_Socket, reinterpret_cast<sockaddr*>(&m_Sockaddr), sizeof(sockaddr_in))) == INVALID_SOCKET)
 	{
 		if (!SHOULD_WAIT_FOR_TIMEOUT)
-			return false;
+			return ConnectionAttemptResult::FAILED_INTERNAL_ERROR;
 	}
 	result = select(static_cast<int>(m_Socket + 1), NULL, &set, NULL, &timeOut);
 
 	// Check result of the connection
 	if (result == 0)
 	{
-		MLOG_INFO("Connection attempt to " + AddressToIPv4String(m_Address) + " timed out", LOG_CATEGORY_CONNECTION);
-		return false;
+		return ConnectionAttemptResult::FAILED_TIMEOUT;
 	}
 	else if (result < 0)
 	{
 		LogAPIErrorMessage("Connection attempt to " + AddressToIPv4String(m_Address) + " failed", LOG_CATEGORY_CONNECTION);
-		return false;
+		return ConnectionAttemptResult::FAILED_INTERNAL_ERROR;
 	}
 
-	return true;
+	return ConnectionAttemptResult::SUCCESS_OUTGOING;
 }
 
 void Connection::Disconnect()
@@ -116,39 +117,6 @@ void Connection::Disconnect()
 
 	TubesUtility::ShutdownAndCloseSocket(m_Socket);
 }
-
-bool Connection::SetBlockingMode( bool shouldBlock )
-{
-	int result;
-#if PLATFORM == PLATFORM_WINDOWS
-	unsigned long nonBlocking = static_cast<unsigned long>( !shouldBlock );
-	result = ioctlsocket( m_Socket, FIONBIO, &nonBlocking );
-#else
-	shouldBlock ? result = fcntl( socket, F_SETFL, fcntl( socket, F_GETFL, 1 ) | O_NONBLOCK ) : result = fcntl( socket, F_SETFL, fcntl( socket, F_GETFL, 0 ) | O_NONBLOCK );
-#endif
-	if ( result != 0 )
-	{
-		LogAPIErrorMessage("Failed to set socket to non blocking mode", LOG_CATEGORY_CONNECTION);
-	}
-
-	return result == 0;
-}
-
-bool Connection::SetNoDelay(bool noDelayOn)
-{
-	bool returnValue = true;
-
-	char flag = static_cast<char>(noDelayOn);
-	int result = setsockopt(m_Socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
-	if ( result < 0 )
-	{
-		LogAPIErrorMessage( "Failed to set TCP_NODELAY for socket with destination " + AddressToIPv4String(m_Address) + " (Error: " << result + ")", LOG_CATEGORY_CONNECTION );
-		returnValue = false;
-	}
-	return returnValue;
-}
-
-// ---------- PUBLIC ----------
 
 SendResult Connection::SerializeAndSendMessage(const Message& message, MessageReplicator& replicator)
 {
@@ -339,6 +307,37 @@ SendResult Connection::SendQueuedMessages()
 	}
 
 	return sendResult;
+}
+
+bool Connection::SetBlockingMode(bool shouldBlock)
+{
+	int result;
+#if PLATFORM == PLATFORM_WINDOWS
+	unsigned long nonBlocking = static_cast<unsigned long>(!shouldBlock);
+	result = ioctlsocket(m_Socket, FIONBIO, &nonBlocking);
+#else
+	shouldBlock ? result = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 1) | O_NONBLOCK) : result = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
+#endif
+	if (result != 0)
+	{
+		LogAPIErrorMessage("Failed to set socket to non blocking mode", LOG_CATEGORY_CONNECTION);
+	}
+
+	return result == 0;
+}
+
+bool Connection::SetNoDelay(bool noDelayOn)
+{
+	bool returnValue = true;
+
+	char flag = static_cast<char>(noDelayOn);
+	int result = setsockopt(m_Socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
+	if (result < 0)
+	{
+		LogAPIErrorMessage("Failed to set TCP_NODELAY for socket with destination " + AddressToIPv4String(m_Address) + " (Error: " << result + ")", LOG_CATEGORY_CONNECTION);
+		returnValue = false;
+	}
+	return returnValue;
 }
 
 // ---------- PRIVATE ----------
