@@ -38,17 +38,24 @@ public:
 	Port					GetPort() const { return m_Port; }
 
 	static uint32_t			ConnectionTimeout;
+
 private:
-	
-	SendResult				SendSerializedMessage(MUtility::Byte* serializedMessage, MessageSize messageSize);
+	struct MessageAndSize
+	{
+		MessageAndSize(MUtility::Byte* message, MessageSize messageSize) : Message(message), MessageSize(messageSize) {}
 
-	Socket					m_Socket;
-	Address					m_Address;
-	Port					m_Port;
-	struct sockaddr_in		m_Sockaddr;
-	ReceiveBuffer			m_ReceiveBuffer;
+		MUtility::Byte* Message;
+		MessageSize MessageSize;
+	};
 
-	std::queue<std::pair<MUtility::Byte*, MessageSize>> unsentMessages; // TODODB: Create struct holding Byte* and Messagesize to get rid of code like".front().first"
+	SendResult SendSerializedMessage(MUtility::Byte* serializedMessage, MessageSize messageSize);
+
+	Socket						m_Socket;
+	Address						m_Address;
+	Port						m_Port;
+	struct sockaddr_in			m_Sockaddr;
+	ReceiveBuffer				m_ReceiveBuffer;
+	std::queue<MessageAndSize>	m_UnsentMessages;
 };
 
 enum class SendResult

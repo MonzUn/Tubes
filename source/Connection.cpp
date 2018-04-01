@@ -62,10 +62,10 @@ Connection::Connection( Socket connectionSocket, const sockaddr_in& destination 
 
 Connection::~Connection()
 {
-	while(!unsentMessages.empty())
+	while(!m_UnsentMessages.empty())
 	{
-		free( unsentMessages.front().first );
-		unsentMessages.pop();
+		free( m_UnsentMessages.front().Message );
+		m_UnsentMessages.pop();
 	}
 }
 
@@ -108,10 +108,10 @@ bool Connection::Connect()
 
 void Connection::Disconnect()
 {
-	while (!unsentMessages.empty())
+	while (!m_UnsentMessages.empty())
 	{
-		free(unsentMessages.front().first);
-		unsentMessages.pop();
+		free(m_UnsentMessages.front().Message);
+		m_UnsentMessages.pop();
 	}
 
 	TubesUtility::ShutdownAndCloseSocket(m_Socket);
@@ -175,12 +175,12 @@ SendResult Connection::SerializeAndSendMessage(const Message& message, MessageRe
 		{
 			result = SendSerializedMessage(serializedMessage, messageSize);
 			if (result == SendResult::Queued)
-				unsentMessages.push(std::pair<Byte*, MessageSize>(serializedMessage, messageSize));
+				m_UnsentMessages.push(MessageAndSize(serializedMessage, messageSize));
 		} break;
 
 		case SendResult::Queued:
 		{
-			unsentMessages.push(std::pair<Byte*, MessageSize>(serializedMessage, messageSize));
+			m_UnsentMessages.push(MessageAndSize(serializedMessage, messageSize));
 			return SendResult::Queued;
 		} break;
 
@@ -316,9 +316,9 @@ SendResult Connection::SendQueuedMessages()
 {
 	SendResult sendResult = SendResult::Sent;
 	bool breakLoop = false;
-	while (!unsentMessages.empty() && !breakLoop)
+	while (!m_UnsentMessages.empty() && !breakLoop)
 	{
-		sendResult = SendSerializedMessage(unsentMessages.front().first, unsentMessages.front().second);
+		sendResult = SendSerializedMessage(m_UnsentMessages.front().Message, m_UnsentMessages.front().MessageSize);
 		switch (sendResult)
 		{
 			case SendResult::Queued:
@@ -330,7 +330,7 @@ SendResult Connection::SendQueuedMessages()
 
 			case SendResult::Sent:
 			{
-				unsentMessages.pop();
+				m_UnsentMessages.pop();
 			} break;
 
 			default:
