@@ -1,6 +1,7 @@
 #include "ConnectionManager.h"
 #include "Interface/Messaging/MessagingTypes.h"
 #include "Interface/TubesSettings.h"
+#include "Interface/TubesTypes.h"
 #include "Connection.h"
 #include "Listener.h"
 #include "TubesErrors.h"
@@ -209,19 +210,21 @@ void ConnectionManager::RequestConnection(const std::string& address, Port port)
 	m_ConnectionAttemptLockCondition.notify_one();
 }
 
-void ConnectionManager::Disconnect(ConnectionID connectionID) // TODODB: Return boolean result
+void ConnectionManager::Disconnect(DisconnectionType type, ConnectionID connectionID) // TODODB: Return boolean result
 {
 	auto& connectionIterator = m_Connections.find(connectionID);
 	if (connectionIterator != m_Connections.end())
 	{
 		Connection* connection = m_Connections.at(connectionID);
 		connection->Disconnect();
-		MLOG_INFO("A connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress()) + " has been disconnected", LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_INFO("A connection with destination " + TubesUtility::AddressToIPv4String( connection->GetAddress()) + " has been disconnected; disconnection type = " + DisonnectionTypeToString(type), LOG_CATEGORY_CONNECTION_MANAGER);
+
+		DisconnectionData disconnectionData = DisconnectionData(type, AddressToIPv4String(connection->GetAddress()), connection->GetPort(), connectionID);
 
 		delete connection;
 		m_Connections.erase(connectionIterator);
 
-		m_DisconnectionCallbacks.TriggerCallbacks(connectionID);
+		m_DisconnectionCallbacks.TriggerCallbacks(disconnectionData);
 	}
 	else
 		MLOG_WARNING("Attempted to disconnect socket with id: " << connectionID + " but no socket with that ID was found", LOG_CATEGORY_CONNECTION_MANAGER);
@@ -240,15 +243,15 @@ void ConnectionManager::DisconnectAll()
 
 	for ( auto& idAndConnection = m_Connections.cbegin(); idAndConnection != m_Connections.cend();)
 	{
-		ConnectionID connectionID = idAndConnection->first;
+		DisconnectionData disconnectionData = DisconnectionData(DisconnectionType::LOCAL, AddressToIPv4String(idAndConnection->second->GetAddress()), idAndConnection->second->GetPort(), idAndConnection->first);
 
 		idAndConnection->second->Disconnect();
-		MLOG_INFO( "A connection with destination " + TubesUtility::AddressToIPv4String(idAndConnection->second->GetAddress() ) + " has been disconnected", LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_INFO("A connection with destination " + TubesUtility::AddressToIPv4String(idAndConnection->second->GetAddress() ) + " has been disconnected; disconnection type = " + DisonnectionTypeToString(DisconnectionType::LOCAL), LOG_CATEGORY_CONNECTION_MANAGER);
 
 		delete idAndConnection->second;
 		m_Connections.erase(idAndConnection++);
 
-		m_DisconnectionCallbacks.TriggerCallbacks(connectionID);
+		m_DisconnectionCallbacks.TriggerCallbacks(disconnectionData);
 	}
 	m_Connections.clear();
 }

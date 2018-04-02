@@ -1,4 +1,5 @@
 #include "Interface/Tubes.h"
+#include "Interface/TubesTypes.h"
 #include <MUtilityPlatformDefinitions.h>
 #include "TubesUtility.h"
 #include "TubesMessageBase.h"
@@ -120,7 +121,7 @@ void Tubes::Update()
 
 		for ( int i = 0; i < toDisconnect.size(); ++i )
 		{
-			m_ConnectionManager->Disconnect( toDisconnect[i] );
+			m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i] ); // TODODB: Update the disconnectionType here when we actually know if it was forceful or not
 		}
 	}
 	else
@@ -142,7 +143,7 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 				{
 					case SendResult::Disconnect:
 					{
-						m_ConnectionManager->Disconnect( destinationConnectionID );
+						m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, destinationConnectionID ); // TODODB: Update the disconnectionType when we actually know if was forceful or not
 					} break;
 
 					case SendResult::Sent:
@@ -190,7 +191,7 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 			{
 				if ( idAndConnection.first != exception )
 				{	
-					SendResult result = idAndConnection.second->SerializeAndSendMessage( *message, *idAndReplicatorIterator->second);
+					SendResult result = idAndConnection.second->SerializeAndSendMessage(*message, *idAndReplicatorIterator->second);
 					switch ( result )
 					{
 						case SendResult::Disconnect:
@@ -209,7 +210,7 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 
 			for (int i = 0; i < toDisconnect.size(); ++i)
 			{
-				m_ConnectionManager->Disconnect( toDisconnect[i] );
+				m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i] ); // TODODB: Update the disconenctiontype when we actually know if it was forceful or not
 			}
 		}
 		else
@@ -223,7 +224,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 {
 	if ( m_Initialized )
 	{
-		std::vector<ConnectionID> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
+		std::vector<std::pair<ConnectionID, DisconnectionType>> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
 		const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 		for ( auto& idAndConnection : connections )
 		{
@@ -252,7 +253,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 					case ReceiveResult::GracefulDisconnect:
 					case ReceiveResult::ForcefulDisconnect:
 					{
-						toDisconnect.push_back( idAndConnection.first );
+						toDisconnect.push_back(std::make_pair(idAndConnection.first, result == ReceiveResult::GracefulDisconnect ? DisconnectionType::REMOTE_GRACEFUL : DisconnectionType::REMOTE_FORCEFUL));
 						disconnected = true;
 					} break;
 
@@ -267,7 +268,7 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 
 		for ( int i = 0; i < toDisconnect.size(); ++i )
 		{
-			m_ConnectionManager->Disconnect( toDisconnect[i] );
+			m_ConnectionManager->Disconnect(toDisconnect[i].second, toDisconnect[i].first);
 		}
 	}
 	else
@@ -328,7 +329,7 @@ bool Tubes::StopAllListeners()
 void Tubes::Disconnect( ConnectionID connectionID )
 {
 	if( m_Initialized )
-		m_ConnectionManager->Disconnect( connectionID );
+		m_ConnectionManager->Disconnect(DisconnectionType::LOCAL, connectionID);
 }
 
 void Tubes::DisconnectAll()

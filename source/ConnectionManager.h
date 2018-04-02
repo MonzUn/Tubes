@@ -1,5 +1,6 @@
 #pragma once
 #include "Interface/Tubes.h" // TODODB: Remove this when callbacks have been changed to no longer depend upon the externals in MUTility (Causes struct redefinition is TubesTypes.h is included instead)
+#include "Interface/TubesTypes.h"
 #include "InternalTubesTypes.h"
 #include "Connection.h"
 #include "Listener.h"
@@ -18,7 +19,7 @@ public:
 	void HandleFailedConnectionAttempts();
 
 	void RequestConnection(const std::string& address, Port port);
-	void Disconnect(Tubes::ConnectionID connectionID);
+	void Disconnect(Tubes::DisconnectionType type, Tubes::ConnectionID connectionID);
 	void DisconnectAll();
 
 	bool StartListener(Port port);
@@ -46,7 +47,6 @@ private:
 		{
 			Address = other.Address;
 			Port	= other.Port;
-
 			return *this;
 		}
 
@@ -62,7 +62,7 @@ private:
 	std::unordered_map<Port, Listener*> m_ListenerMap;
 
 	CallbackRegister<Tubes::ConnectionCallbackTag, void, const Tubes::ConnectionAttemptResultData&> m_ConnectionCallbacks;
-	CallbackRegister<Tubes::DisconnectionCallbackTag, void, uint32_t> m_DisconnectionCallbacks;
+	CallbackRegister<Tubes::DisconnectionCallbackTag, void, const Tubes::DisconnectionData&> m_DisconnectionCallbacks;
 	MUtility::LocklessQueue<Tubes::ConnectionAttemptResultData> FailedConnectionAttemptsQueue;
 
 	Tubes::ConnectionID m_NextConnectionID = 1;

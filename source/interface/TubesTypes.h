@@ -1,5 +1,6 @@
 #pragma once
 #include <MUtilityExternal/CallbackRegister.h>
+#include <string.h>
 
 #define TUBES_PORT_ANY 0
 
@@ -11,7 +12,7 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 {
 	typedef int32_t	ConnectionID;
 
-	enum class ConnectionAttemptResult
+	enum class ConnectionAttemptResult : uint32_t
 	{
 		FAILED_INVALID_IP,
 		FAILED_INVALID_PORT,
@@ -20,7 +21,18 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 		SUCCESS_INCOMING,
 		SUCCESS_OUTGOING,
 
+		COUNT,
 		INVALID
+	};
+
+	enum class DisconnectionType : uint32_t
+	{
+		LOCAL,
+		REMOTE_GRACEFUL,
+		REMOTE_FORCEFUL,
+
+		COUNT,
+		INVALID,
 	};
 
 	struct ConnectionAttemptResultData
@@ -35,11 +47,24 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 		ConnectionID ID					= TUBES_INVALID_CONNECTION_ID;
 	};
 
+	struct DisconnectionData 
+	{
+		DisconnectionData(DisconnectionType type, const std::string& address, uint16_t port, ConnectionID id) : Type(type), Address(address), Port(port), ID(id) {}
+
+		DisconnectionType Type	= DisconnectionType::INVALID;
+		std::string Address		= TUBES_INVALID_IPv4_ADDRESS;
+		uint16_t Port			= TUBES_INVALID_PORT;
+		ConnectionID ID			= TUBES_INVALID_CONNECTION_ID;
+	};
+
 	struct	ConnectionCallbackTag {};
-	typedef Handle<ConnectionCallbackTag, int, -1>	ConnectionCallbackHandle;
-	typedef std::function<void(ConnectionAttemptResultData)> ConnectionCallbackFunction;
+	typedef Handle<ConnectionCallbackTag, int, -1>					ConnectionCallbackHandle;
+	typedef std::function<void(const ConnectionAttemptResultData&)> ConnectionCallbackFunction;
 
 	struct	DisconnectionCallbackTag {};
-	typedef Handle<DisconnectionCallbackTag, int, -1>	DisconnectionCallbackHandle;
-	typedef std::function<void(ConnectionID)>			DisconnectionCallbackFunction; // TODODB: Return a struct similar to ConnectionAttemptResult here to better explain who and why
+	typedef Handle<DisconnectionCallbackTag, int, -1>		DisconnectionCallbackHandle;
+	typedef std::function<void(const DisconnectionData&)>	DisconnectionCallbackFunction;
+
+	std::string ConnectionAttemptResultToString(ConnectionAttemptResult toConvert);
+	std::string DisonnectionTypeToString(DisconnectionType toConvert);
 }
