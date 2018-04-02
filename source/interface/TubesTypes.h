@@ -57,6 +57,16 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 		ConnectionID ID			= TUBES_INVALID_CONNECTION_ID;
 	};
 
+	struct ConnectionInfo
+	{
+		ConnectionInfo() {}
+		ConnectionInfo(ConnectionID id, const std::string& address, uint16_t port) : ID(id), Address(address), Port(Port) {}
+
+		ConnectionID ID		= TUBES_INVALID_CONNECTION_ID;
+		std::string Address = TUBES_INVALID_IPv4_ADDRESS;
+		uint16_t Port		= TUBES_INVALID_PORT;
+	};
+
 	struct	ConnectionCallbackTag {};
 	typedef Handle<ConnectionCallbackTag, int, -1>					ConnectionCallbackHandle;
 	typedef std::function<void(const ConnectionAttemptResultData&)> ConnectionCallbackFunction;

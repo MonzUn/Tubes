@@ -372,13 +372,13 @@ void ConnectionManager::Connect(const std::string& address, Port port)
 	}
 }
 
-Connection* ConnectionManager::GetConnection( ConnectionID connectionID ) const
+Connection* ConnectionManager::GetConnection( ConnectionID ID ) const
 {
 	Connection* toReturn = nullptr;
-	if (m_Connections.find(connectionID) != m_Connections.end())
-		toReturn = m_Connections.at(connectionID);
+	if (m_Connections.find(ID) != m_Connections.end())
+		toReturn = m_Connections.at(ID);
 	else
-		MLOG_WARNING( "Attempted to fetch nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
+		MLOG_WARNING( "Attempted to fetch nonexistent connection (ID = " << ID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
 
 	return toReturn;
 }
@@ -388,28 +388,22 @@ const std::unordered_map<ConnectionID, Connection*>& ConnectionManager::GetVerif
 	return m_Connections;
 }
 
-std::string ConnectionManager::GetAddressOfConnection(ConnectionID connectionID) const
+uint32_t ConnectionManager::GetVerifiedConnctionCount() const
 {
-	std::string toReturn = "";
-	if (m_Connections.find(connectionID) != m_Connections.end())
-	{
-		toReturn = TubesUtility::AddressToIPv4String(m_Connections.at(connectionID)->GetAddress());
-	}
-	else
-		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
-
-	return toReturn;
+	return static_cast<uint32_t>(m_Connections.size());
 }
 
-Port ConnectionManager::GetPortOfConnection(ConnectionID connectionID) const
+std::string ConnectionManager::GetAddressOfConnection(ConnectionID ID) const
 {
-	Port toReturn = TUBES_PORT_ANY;
-	if (m_Connections.find(connectionID) != m_Connections.end())
-	{
-		toReturn = m_Connections.at(connectionID)->GetPort();
-	}
-	else
-		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_CONNECTION_MANAGER);
+	return TubesUtility::AddressToIPv4String(m_Connections.at(ID)->GetAddress());
+}
 
-	return toReturn;
+Port ConnectionManager::GetPortOfConnection(ConnectionID ID) const
+{
+	return m_Connections.at(ID)->GetPort();
+}
+
+bool ConnectionManager::IsConnectionIDValid(ConnectionID ID) const
+{
+	return m_Connections.find(ID) != m_Connections.end();
 }

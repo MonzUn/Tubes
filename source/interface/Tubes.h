@@ -10,7 +10,7 @@
 class	MessageReplicator;
 struct	Message;
 
-namespace Tubes
+namespace Tubes // TODOD: Remove redundant "connection" from connectionID parameters
 {
 	bool Initialize();
 	void Shutdown();
@@ -34,8 +34,11 @@ namespace Tubes
 	DisconnectionCallbackHandle RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction );
 	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
 
-	bool IsValidIPv4Address( const char* ipv4String );
-
+	uint32_t GetConnectionCount();
+	ConnectionInfo GetConnectionInfo(ConnectionID connectionID);
 	std::string GetAddressOfConnection(ConnectionID connectionID);
 	uint16_t GetPortOfConnection(ConnectionID connectionID);
+
+	bool IsValidIPv4Address( const char* ipv4String );
+	
 };

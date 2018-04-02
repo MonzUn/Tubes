@@ -1,6 +1,5 @@
 #pragma once
 #include "Interface/Tubes.h" // TODODB: Remove this when callbacks have been changed to no longer depend upon the externals in MUTility (Causes struct redefinition is TubesTypes.h is included instead)
-#include "Interface/TubesTypes.h"
 #include "InternalTubesTypes.h"
 #include "Connection.h"
 #include "Listener.h"
@@ -31,11 +30,14 @@ public:
 	Tubes::DisconnectionCallbackHandle RegisterDisconnectionCallback(Tubes::DisconnectionCallbackFunction callbackFunction);
 	bool UnregisterDisconnectionCallback(Tubes::DisconnectionCallbackHandle handle);
 
-	Connection* GetConnection(Tubes::ConnectionID connectionID) const;
+	Connection* GetConnection(Tubes::ConnectionID ID) const;
 	const std::unordered_map<Tubes::ConnectionID, Connection*>& GetVerifiedConnections() const;
 
-	std::string GetAddressOfConnection(Tubes::ConnectionID connectionID) const;
-	uint16_t GetPortOfConnection(Tubes::ConnectionID connectionID) const;
+	uint32_t GetVerifiedConnctionCount() const;
+	std::string GetAddressOfConnection(Tubes::ConnectionID ID) const;
+	uint16_t GetPortOfConnection(Tubes::ConnectionID ID) const;
+
+	bool IsConnectionIDValid(Tubes::ConnectionID ID) const;
 
 private:
 	struct ConnectionAttemptData

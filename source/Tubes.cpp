@@ -382,6 +382,48 @@ bool Tubes::UnregisterDisconnectionCallback(DisconnectionCallbackHandle handle)
 	return false;
 }
 
+uint32_t Tubes::GetConnectionCount() // TODODB: Protect against uninitialized instance
+{
+	return m_ConnectionManager->GetVerifiedConnctionCount();
+}
+
+ConnectionInfo Tubes::GetConnectionInfo(ConnectionID connectionID)// TODODB: Protect against uninitialized instance
+{
+	ConnectionInfo result;
+	if (m_ConnectionManager->IsConnectionIDValid(connectionID))
+	{
+		result.ID = connectionID;
+		result.Address = m_ConnectionManager->GetAddressOfConnection(connectionID);
+		result.Port = m_ConnectionManager->GetPortOfConnection(connectionID);
+	}
+	else
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_GENERAL);
+
+	return result;
+}
+
+std::string Tubes::GetAddressOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
+{
+	std::string result = "";
+	if (m_ConnectionManager->IsConnectionIDValid(connectionID))
+		result = m_ConnectionManager->GetAddressOfConnection(connectionID);
+	else
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_GENERAL);
+		
+	return result;
+}
+
+uint16_t Tubes::GetPortOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
+{
+	uint16_t result = TUBES_INVALID_PORT;
+	if(m_ConnectionManager->IsConnectionIDValid(connectionID))
+		result = m_ConnectionManager->GetPortOfConnection(connectionID);
+	else
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_GENERAL);
+
+	return result;
+}
+
 bool Tubes::IsValidIPv4Address(const char* ipv4String)
 {
 	struct sockaddr_in sa;
@@ -392,14 +434,4 @@ bool Tubes::IsValidIPv4Address(const char* ipv4String)
 	result = inet_pton(AF_INET, ipv4String, &(sa.sin_addr));
 #endif
 	return result != 0;
-}
-
-std::string Tubes::GetAddressOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
-{
-	return m_ConnectionManager->GetAddressOfConnection(connectionID);
-}
-
-uint16_t Tubes::GetPortOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
-{
-	return m_ConnectionManager->GetPortOfConnection(connectionID);
 }
