@@ -34,116 +34,176 @@ namespace Tubes
 	bool m_Initialized = false;
 }
 
-bool Tubes::Initialize() // TODODB: Make sure this cannot be called if the instance is already initialized
+bool Tubes::Initialize()
 { 
-	if ( !m_Initialized )
+	if (m_Initialized)
 	{
-		m_ReplicatorReferences = new std::unordered_map<ReplicatorID, MessageReplicator*>();
-		m_ReceivedTubesMessages = new std::vector<TubesMessage*>();
+		MLOG_WARNING("Attempted to initialize an already initialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return false;
+	}
+
+	m_ReplicatorReferences = new std::unordered_map<ReplicatorID, MessageReplicator*>();
+	m_ReceivedTubesMessages = new std::vector<TubesMessage*>();
 
 #if PLATFORM == PLATFORM_WINDOWS
-		WSADATA wsaData;
-		m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
-		if ( !m_Initialized )
-			LogAPIErrorMessage( "Failed to initialize Tubes since WSAStartup failed", LOG_CATEGORY_GENERAL );
+	WSADATA wsaData;
+	m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
+	if (!m_Initialized)
+		LogAPIErrorMessage( "Failed to initialize Tubes since WSAStartup failed", LOG_CATEGORY_GENERAL );
 #else 
-		m_Initialized = true;
+	m_Initialized = true;
 #endif
 
-		if ( m_Initialized )
-		{
-			m_ConnectionManager = new ConnectionManager;
-			m_TubesMessageReplicator = new TubesMessageReplicator;
-			m_ReplicatorReferences->emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
+	if ( m_Initialized )
+	{
+		m_ConnectionManager = new ConnectionManager;
+		m_TubesMessageReplicator = new TubesMessageReplicator;
+		m_ReplicatorReferences->emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
 
-			MLOG_INFO( "Tubes initialized successfully", LOG_CATEGORY_GENERAL );
-		}
+		MLOG_INFO( "Tubes initialized successfully", LOG_CATEGORY_GENERAL );
 	}
-	else
-		MLOG_WARNING( "Attempted to initialize an already initialized instance of Tubes", LOG_CATEGORY_GENERAL );
 
 	return m_Initialized;
 }
 
 void Tubes::Shutdown()
 {
-	if ( m_Initialized )
+	if (!m_Initialized)
 	{
-		m_ConnectionManager->StopAllListeners();
-		m_ConnectionManager->DisconnectAll();
-
-		#if PLATFORM == PLATFORM_WINDOWS
-			WSACleanup();
-		#endif
-
-		delete m_ConnectionManager;
-
-		for (auto& IDAndReplicator : *m_ReplicatorReferences)
-		{
-			delete IDAndReplicator.second;
-		}
-		m_ReplicatorReferences->clear();
-		delete m_ReplicatorReferences;
-
-		for ( int i = 0; i < m_ReceivedTubesMessages->size(); ++i )
-		{
-			free( (*m_ReceivedTubesMessages)[i] );
-		}
-		m_ReceivedTubesMessages->clear();
-		delete m_ReceivedTubesMessages;
-
-		MLOG_INFO( "Tubes has been shut down", LOG_CATEGORY_GENERAL );
+		MLOG_WARNING("Attempted to shut down uninitialized isntance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
 	}
-	else
-		MLOG_WARNING( "Attempted to shut down uninitialized isntance of Tubes", LOG_CATEGORY_GENERAL );
 
+	m_ConnectionManager->StopAllListeners();
+	m_ConnectionManager->DisconnectAll();
+
+	#if PLATFORM == PLATFORM_WINDOWS
+		WSACleanup();
+	#endif
+
+	delete m_ConnectionManager;
+
+	for (auto& IDAndReplicator : *m_ReplicatorReferences)
+	{
+		delete IDAndReplicator.second;
+	}
+	m_ReplicatorReferences->clear();
+	delete m_ReplicatorReferences;
+
+	for ( int i = 0; i < m_ReceivedTubesMessages->size(); ++i )
+	{
+		free( (*m_ReceivedTubesMessages)[i] );
+	}
+	m_ReceivedTubesMessages->clear();
+	delete m_ReceivedTubesMessages;
+
+	MLOG_INFO( "Tubes has been shut down", LOG_CATEGORY_GENERAL );
 	m_Initialized = false;
 }
 
 void Tubes::Update()
 {
-	if ( m_Initialized )
+	if (!m_Initialized)
 	{
-		m_ConnectionManager->VerifyNewConnections( *m_TubesMessageReplicator );
-		m_ConnectionManager->HandleFailedConnectionAttempts();
+		MLOG_WARNING("Attempted to update uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
+	}
 
-		// Send queued messages
-		std::vector<ConnectionID> toDisconnect;
-		for ( auto& idAndConnection : m_ConnectionManager->GetVerifiedConnections() )
-		{
-			SendResult sendResult = idAndConnection.second->SendQueuedMessages();
-			if ( sendResult == SendResult::Disconnect )
-			{
-				toDisconnect.push_back( idAndConnection.first );
-				continue;
-			}
-		}
+	m_ConnectionManager->VerifyNewConnections( *m_TubesMessageReplicator );
+	m_ConnectionManager->HandleFailedConnectionAttempts();
 
-		for ( int i = 0; i < toDisconnect.size(); ++i )
+	// Send queued messages
+	std::vector<ConnectionID> toDisconnect;
+	for ( auto& idAndConnection : m_ConnectionManager->GetVerifiedConnections() )
+	{
+		SendResult sendResult = idAndConnection.second->SendQueuedMessages();
+		if ( sendResult == SendResult::Disconnect )
 		{
-			m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i] ); // TODODB: Update the disconnectionType here when we actually know if it was forceful or not
+			toDisconnect.push_back( idAndConnection.first );
+			continue;
 		}
 	}
-	else
-		MLOG_WARNING( "Attempted to update uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
+
+	for ( int i = 0; i < toDisconnect.size(); ++i )
+	{
+		m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i] ); // TODODB: Update the disconnectionType here when we actually know if it was forceful or not
+	}
 }
 
 void Tubes::SendToConnection( const Message* message, ConnectionID destinationConnectionID )
 {
-	if ( m_Initialized )
+	if (!m_Initialized)
 	{
-		Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
-		if ( connection != nullptr )
+		MLOG_WARNING("Attempted to send using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
+	}
+
+	Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
+	if ( connection != nullptr )
+	{
+		auto& idAndConnectionIterator = m_ReplicatorReferences->find(message->Replicator_ID);
+		if (idAndConnectionIterator != m_ReplicatorReferences->end() )
 		{
-			auto& idAndConnectionIterator = m_ReplicatorReferences->find(message->Replicator_ID);
-			if (idAndConnectionIterator != m_ReplicatorReferences->end() )
+			SendResult result = connection->SerializeAndSendMessage( *message, *idAndConnectionIterator->second);
+			switch ( result )
 			{
-				SendResult result = connection->SerializeAndSendMessage( *message, *idAndConnectionIterator->second);
+				case SendResult::Disconnect:
+				{
+					m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, destinationConnectionID ); // TODODB: Update the disconnectionType when we actually know if was forceful or not
+				} break;
+
+				case SendResult::Sent:
+				case SendResult::Queued:
+				case SendResult::Error:
+				default:
+					break;
+			}
+		}
+		else
+			MLOG_WARNING( "Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL );
+	}
+	else
+		MLOG_WARNING( "Failed to find requested connection while sending (Requested ID = " << destinationConnectionID + " )", LOG_CATEGORY_GENERAL);
+}
+
+void Tubes::SendToAll( const Message* message, ConnectionID exception )
+{
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to send using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
+	}
+
+	auto& idAndReplicatorIterator = m_ReplicatorReferences->find(message->Replicator_ID);
+	if (idAndReplicatorIterator != m_ReplicatorReferences->end() )
+	{
+		const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
+
+#if TUBES_DEBUG == 1
+		if ( exception != TUBES_INVALID_CONNECTION_ID )
+		{
+			bool exceptionExists = false;
+			for ( auto& idAndConnection : connections )
+			{
+				if ( idAndConnection.first == exception )
+					exceptionExists = true;
+			}
+
+			if ( !exceptionExists )
+				MLOG_WARNING( "The excepted connectionID supplied to SendToAll does not exist", LOG_CATEGORY_GENERAL );
+		}
+#endif
+		std::vector<ConnectionID> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
+		for ( auto& idAndConnection : connections )
+		{
+			if ( idAndConnection.first != exception )
+			{	
+				SendResult result = idAndConnection.second->SerializeAndSendMessage(*message, *idAndReplicatorIterator->second);
 				switch ( result )
 				{
 					case SendResult::Disconnect:
 					{
-						m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, destinationConnectionID ); // TODODB: Update the disconnectionType when we actually know if was forceful or not
+						toDisconnect.push_back( idAndConnection.first );
 					} break;
 
 					case SendResult::Sent:
@@ -153,131 +213,76 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 						break;
 				}
 			}
-			else
-				MLOG_WARNING( "Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL );
 		}
-		else
-			MLOG_WARNING( "Failed to find requested connection while sending (Requested ID = " << destinationConnectionID + " )", LOG_CATEGORY_GENERAL);
-	}
-	else
-		MLOG_WARNING( "Attempted to send using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
-}
 
-void Tubes::SendToAll( const Message* message, ConnectionID exception )
-{
-	if ( m_Initialized )
-	{
-		auto& idAndReplicatorIterator = m_ReplicatorReferences->find(message->Replicator_ID);
-		if (idAndReplicatorIterator != m_ReplicatorReferences->end() )
+		for (int i = 0; i < toDisconnect.size(); ++i)
 		{
-			const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
-
-#if TUBES_DEBUG == 1
-			if ( exception != TUBES_INVALID_CONNECTION_ID )
-			{
-				bool exceptionExists = false;
-				for ( auto& idAndConnection : connections )
-				{
-					if ( idAndConnection.first == exception )
-						exceptionExists = true;
-				}
-
-				if ( !exceptionExists )
-					MLOG_WARNING( "The excepted connectionID supplied to SendToAll does not exist", LOG_CATEGORY_GENERAL );
-			}
-#endif
-			std::vector<ConnectionID> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
-			for ( auto& idAndConnection : connections )
-			{
-				if ( idAndConnection.first != exception )
-				{	
-					SendResult result = idAndConnection.second->SerializeAndSendMessage(*message, *idAndReplicatorIterator->second);
-					switch ( result )
-					{
-						case SendResult::Disconnect:
-						{
-							toDisconnect.push_back( idAndConnection.first );
-						} break;
-
-						case SendResult::Sent:
-						case SendResult::Queued:
-						case SendResult::Error:
-						default:
-							break;
-					}
-				}
-			}
-
-			for (int i = 0; i < toDisconnect.size(); ++i)
-			{
-				m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i] ); // TODODB: Update the disconenctiontype when we actually know if it was forceful or not
-			}
+			m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i] ); // TODODB: Update the disconnectiontype when we actually know if it was forceful or not
 		}
-		else
-			MLOG_WARNING("Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL);
 	}
 	else
-		MLOG_WARNING( "Attempted to send using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
+		MLOG_WARNING("Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL);
 }
 
 void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionID>* outSenderIDs )
 {
-	if ( m_Initialized )
+	if (!m_Initialized)
 	{
-		std::vector<std::pair<ConnectionID, DisconnectionType>> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
-		const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
-		for ( auto& idAndConnection : connections )
-		{
-			bool disconnected = false;
-			Message* message = nullptr;
-			ReceiveResult result;
-			do
-			{
-				result = idAndConnection.second->Receive( *m_ReplicatorReferences, message );
-				switch ( result )
-				{
-					case ReceiveResult::Fullmessage:
-					{
-						if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID )
-						{
-							m_ReceivedTubesMessages->push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
-						}
-						else
-						{
-							outMessages.push_back( message );
-							if ( outSenderIDs )
-								outSenderIDs->push_back( idAndConnection.first );
-						}
-					} break;
-
-					case ReceiveResult::GracefulDisconnect:
-					case ReceiveResult::ForcefulDisconnect:
-					{
-						toDisconnect.push_back(std::make_pair(idAndConnection.first, result == ReceiveResult::GracefulDisconnect ? DisconnectionType::REMOTE_GRACEFUL : DisconnectionType::REMOTE_FORCEFUL));
-						disconnected = true;
-					} break;
-
-					case ReceiveResult::Empty:
-					case ReceiveResult::PartialMessage:
-					case ReceiveResult::Error:
-					default:
-						break;
-				}
-			} while ( result == ReceiveResult::Fullmessage && !disconnected );
-		}
-
-		for ( int i = 0; i < toDisconnect.size(); ++i )
-		{
-			m_ConnectionManager->Disconnect(toDisconnect[i].second, toDisconnect[i].first);
-		}
+		MLOG_WARNING("Attempted to receive using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
 	}
-	else
-		MLOG_WARNING( "Attempted to receive using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL );
+
+	std::vector<std::pair<ConnectionID, DisconnectionType>> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
+	const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
+	for ( auto& idAndConnection : connections )
+	{
+		bool disconnected = false;
+		Message* message = nullptr;
+		ReceiveResult result;
+		do
+		{
+			result = idAndConnection.second->Receive( *m_ReplicatorReferences, message );
+			switch ( result )
+			{
+				case ReceiveResult::Fullmessage:
+				{
+					if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID )
+					{
+						m_ReceivedTubesMessages->push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
+					}
+					else
+					{
+						outMessages.push_back( message );
+						if ( outSenderIDs )
+							outSenderIDs->push_back( idAndConnection.first );
+					}
+				} break;
+
+				case ReceiveResult::GracefulDisconnect:
+				case ReceiveResult::ForcefulDisconnect:
+				{
+					toDisconnect.push_back(std::make_pair(idAndConnection.first, result == ReceiveResult::GracefulDisconnect ? DisconnectionType::REMOTE_GRACEFUL : DisconnectionType::REMOTE_FORCEFUL));
+					disconnected = true;
+				} break;
+
+				case ReceiveResult::Empty:
+				case ReceiveResult::PartialMessage:
+				case ReceiveResult::Error:
+				default:
+					break;
+			}
+		} while ( result == ReceiveResult::Fullmessage && !disconnected );
+	}
+
+	for ( int i = 0; i < toDisconnect.size(); ++i )
+	{
+		m_ConnectionManager->Disconnect(toDisconnect[i].second, toDisconnect[i].first);
+	}
 }
 
 void Tubes::RequestConnection( const std::string& address, uint16_t port )
 {
-	if (!m_Initialized) // TODODB: Create a macro for doing this error check and apply it to all relevant interface functions 
+	if (!m_Initialized)
 	{
 		return;
 		MLOG_WARNING("Attempted to request a connection although the Tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
@@ -296,132 +301,180 @@ void Tubes::RequestConnection( const std::string& address, uint16_t port )
 
 bool Tubes::StartListener(uint16_t port)
 {
-	bool result = false;
-	if (m_Initialized)
-		result = m_ConnectionManager->StartListener(port);
-	else
+	if (!m_Initialized)
+	{
 		MLOG_WARNING("Attempted to start listening on port " << port + " although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
+		return false;
+	}
 
-	return result;
+	return m_ConnectionManager->StartListener(port);
 }
 bool Tubes::StopListener(uint16_t port)
 {
-	bool result = false;
 	if (m_Initialized)
-		result = m_ConnectionManager->StopListener(port);
-	else
+	{
 		MLOG_WARNING("Attempted to stop listener although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
+		return false;
+	}
 
-	return result;
+	return m_ConnectionManager->StopListener(port);
 }
 
 bool Tubes::StopAllListeners()
 {
-	bool result = false;
-	if ( m_Initialized )
-		result = m_ConnectionManager->StopAllListeners();
-	else
-		MLOG_WARNING( "Attempted to stop all listeners although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
+	if (!m_Initialized)
+	{
+		return false;
+		MLOG_WARNING("Attempted to stop all listeners although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
+	}
 
-	return result;
+	return m_ConnectionManager->StopAllListeners();
 }
 
-void Tubes::Disconnect( ConnectionID connectionID )
+void Tubes::Disconnect(ConnectionID connectionID)
 {
-	if( m_Initialized )
-		m_ConnectionManager->Disconnect(DisconnectionType::LOCAL, connectionID);
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to disconnect connection using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
+	}
+	
+	m_ConnectionManager->Disconnect(DisconnectionType::LOCAL, connectionID);
 }
 
 void Tubes::DisconnectAll()
 {
-	if( m_Initialized )
-		m_ConnectionManager->DisconnectAll();
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to disconnect all connections using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
+	}
+
+	m_ConnectionManager->DisconnectAll();
 }
 
-void Tubes::RegisterReplicator( MessageReplicator* replicator ) // TODODB: Add unregistration function
+void Tubes::RegisterReplicator(MessageReplicator* replicator) // TODODB: Add unregistration function
 {
-	if ( m_Initialized )
-		m_ReplicatorReferences->emplace( replicator->GetID(), replicator ); // TODODB: Add error checking (Nullptr and duplicates)
-	else
-		MLOG_WARNING( "Attempted to register replicator although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to register replicator using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return;
+	}
+
+	m_ReplicatorReferences->emplace(replicator->GetID(), replicator); // TODODB: Add error checking (Nullptr and duplicates)	
 }
 
 ConnectionCallbackHandle Tubes::RegisterConnectionCallback(ConnectionCallbackFunction callbackFunction)
 {
 	ConnectionCallbackHandle toReturn;
-	if (m_Initialized)
-		toReturn = m_ConnectionManager->RegisterConnectionCallback(callbackFunction);
-	else
-		MLOG_WARNING( "Attempted to register callback although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL );
-	return toReturn;
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to register connection callback using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return toReturn;
+	}
+
+	return m_ConnectionManager->RegisterConnectionCallback(callbackFunction);
 }
 
-bool Tubes::UnregisterConnectionCallback( ConnectionCallbackHandle handle )
+bool Tubes::UnregisterConnectionCallback(ConnectionCallbackHandle handle)
 {
-	if(m_Initialized)
-		return m_ConnectionManager->UnregisterConnectionCallback( handle );
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to unregister connection callback using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return false;
+	}
 
-	return false;
+	return m_ConnectionManager->UnregisterConnectionCallback(handle);
 }
 
 DisconnectionCallbackHandle Tubes::RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction )
 {
 	DisconnectionCallbackHandle toReturn;
-	if (m_Initialized)
-		toReturn = m_ConnectionManager->RegisterDisconnectionCallback(callbackFunction);
-	else
-		MLOG_WARNING("Attempted to register callback although the tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
-	return toReturn;
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to register disconnection callback using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return toReturn;
+	}
+
+	return m_ConnectionManager->RegisterDisconnectionCallback(callbackFunction);
 }
 
 bool Tubes::UnregisterDisconnectionCallback(DisconnectionCallbackHandle handle)
 {
-	if(m_Initialized)
-		return m_ConnectionManager->UnregisterDisconnectionCallback( handle );
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to unregister disconnection callback using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return false;
+	}
 
-	return false;
+	return m_ConnectionManager->UnregisterDisconnectionCallback(handle);
 }
 
-uint32_t Tubes::GetConnectionCount() // TODODB: Protect against uninitialized instance
+uint32_t Tubes::GetConnectionCount()
 {
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to get connection count using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return 0;
+	}
+
 	return m_ConnectionManager->GetVerifiedConnctionCount();
 }
 
-ConnectionInfo Tubes::GetConnectionInfo(ConnectionID connectionID)// TODODB: Protect against uninitialized instance
+ConnectionInfo Tubes::GetConnectionInfo(ConnectionID ID)
 {
-	ConnectionInfo result;
-	if (m_ConnectionManager->IsConnectionIDValid(connectionID))
+	ConnectionInfo toReturn;
+	if (!m_Initialized)
 	{
-		result.ID = connectionID;
-		result.Address = m_ConnectionManager->GetAddressOfConnection(connectionID);
-		result.Port = m_ConnectionManager->GetPortOfConnection(connectionID);
+		MLOG_WARNING("Attempted to get connection info using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return toReturn;
 	}
-	else
-		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_GENERAL);
 
-	return result;
+	if (!m_ConnectionManager->IsConnectionIDValid(ID))
+	{
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << ID + " )", LOG_CATEGORY_GENERAL);
+		return toReturn;
+	}
+
+	toReturn.ID = ID;
+	toReturn.Address = m_ConnectionManager->GetAddressOfConnection(ID);
+	toReturn.Port = m_ConnectionManager->GetPortOfConnection(ID);		
+
+	return toReturn;
 }
 
-std::string Tubes::GetAddressOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
+std::string Tubes::GetAddressOfConnection(ConnectionID ID)
 {
-	std::string result = "";
-	if (m_ConnectionManager->IsConnectionIDValid(connectionID))
-		result = m_ConnectionManager->GetAddressOfConnection(connectionID);
-	else
-		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_GENERAL);
-		
-	return result;
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to get address of connection using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return "";
+	}
+
+	if (!m_ConnectionManager->IsConnectionIDValid(ID))
+	{
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << ID + " )", LOG_CATEGORY_GENERAL);
+		return "";
+	}
+
+	return m_ConnectionManager->GetAddressOfConnection(ID);	
 }
 
-uint16_t Tubes::GetPortOfConnection(ConnectionID connectionID) // TODODB: Protect against uninitialized instance
+uint16_t Tubes::GetPortOfConnection(ConnectionID ID)
 {
-	uint16_t result = TUBES_INVALID_PORT;
-	if(m_ConnectionManager->IsConnectionIDValid(connectionID))
-		result = m_ConnectionManager->GetPortOfConnection(connectionID);
-	else
-		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << connectionID + " )", LOG_CATEGORY_GENERAL);
+	if (!m_Initialized)
+	{
+		MLOG_WARNING("Attempted to get port of connection using an uninitialized instance of Tubes", LOG_CATEGORY_GENERAL);
+		return TUBES_INVALID_PORT;
+	}
 
-	return result;
+	if (!m_ConnectionManager->IsConnectionIDValid(ID))
+	{
+		MLOG_WARNING("Attempted to get port of nonexistent connection (ID = " << ID + " )", LOG_CATEGORY_GENERAL);
+		return TUBES_INVALID_PORT;
+	}
+
+	return m_ConnectionManager->GetPortOfConnection(ID);
 }
 
 bool Tubes::IsValidIPv4Address(const char* ipv4String)

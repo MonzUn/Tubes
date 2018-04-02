@@ -35,9 +35,9 @@ namespace Tubes // TODOD: Remove redundant "connection" from connectionID parame
 	bool UnregisterDisconnectionCallback( DisconnectionCallbackHandle handle );
 
 	uint32_t GetConnectionCount();
-	ConnectionInfo GetConnectionInfo(ConnectionID connectionID);
-	std::string GetAddressOfConnection(ConnectionID connectionID);
-	uint16_t GetPortOfConnection(ConnectionID connectionID);
+	ConnectionInfo GetConnectionInfo(ConnectionID ID);
+	std::string GetAddressOfConnection(ConnectionID ID);
+	uint16_t GetPortOfConnection(ConnectionID ID);
 
 	bool IsValidIPv4Address( const char* ipv4String );
 	
