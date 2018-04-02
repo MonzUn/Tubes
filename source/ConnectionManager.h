@@ -30,6 +30,9 @@ public:
 	Tubes::DisconnectionCallbackHandle RegisterDisconnectionCallback(Tubes::DisconnectionCallbackFunction callbackFunction);
 	bool UnregisterDisconnectionCallback(Tubes::DisconnectionCallbackHandle handle);
 
+	void CallConnectionCallback(const Tubes::ConnectionAttemptResultData& resultData);
+	void CallDisconnectionCallback(const Tubes::DisconnectionData& disconnectionData);
+
 	Connection* GetConnection(Tubes::ConnectionID ID) const;
 	const std::unordered_map<Tubes::ConnectionID, Connection*>& GetVerifiedConnections() const;
 

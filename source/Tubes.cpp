@@ -284,17 +284,21 @@ void Tubes::RequestConnection( const std::string& address, uint16_t port )
 {
 	if (!m_Initialized)
 	{
-		return;
 		MLOG_WARNING("Attempted to request a connection although the Tubes instance is uninitialized", LOG_CATEGORY_GENERAL);
-	}
-
-	if (address == "")
-	{
-		MLOG_WARNING("Attempted to connect using empty string as address", LOG_CATEGORY_GENERAL);
 		return;
 	}
 
-	// TODODB: Validate address and port (call conntaionfailed callback when failed occurs)
+	if (!Tubes::IsValidIPv4Address(address.c_str()))
+	{
+		m_ConnectionManager->CallConnectionCallback(ConnectionAttemptResult::FAILED_INVALID_IP);
+		return;
+	}
+
+	if (port == TUBES_INVALID_PORT)
+	{
+		m_ConnectionManager->CallConnectionCallback(ConnectionAttemptResult::FAILED_INVALID_PORT);
+		return;
+	}
 
 	m_ConnectionManager->RequestConnection(address, port);
 }

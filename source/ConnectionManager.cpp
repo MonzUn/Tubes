@@ -327,6 +327,16 @@ bool ConnectionManager::UnregisterDisconnectionCallback( DisconnectionCallbackHa
 	return m_DisconnectionCallbacks.UnregisterCallback( handle );
 }
 
+void ConnectionManager::CallConnectionCallback(const Tubes::ConnectionAttemptResultData& resultData)
+{
+	m_ConnectionCallbacks.TriggerCallbacks(resultData);
+}
+
+void ConnectionManager::CallDisconnectionCallback(const Tubes::DisconnectionData& disconnectionData)
+{
+	m_DisconnectionCallbacks.TriggerCallbacks(disconnectionData);
+}
+
 // ---------- PRIVATE ----------
 
 void ConnectionManager::ProcessConnectionRequests()

@@ -38,6 +38,7 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 	struct ConnectionAttemptResultData
 	{
 		ConnectionAttemptResultData() {};
+		ConnectionAttemptResultData(ConnectionAttemptResult result) : Result(result) {}
 		ConnectionAttemptResultData(ConnectionAttemptResult result, const std::string& address, uint16_t port, ConnectionID id ) : Result(result), Address(address), Port(port), ID(id) {}
 		ConnectionAttemptResultData(ConnectionAttemptResult result, const std::string& address, uint16_t port) : Result(result), Address(address), Port(port) {}
 
@@ -49,6 +50,7 @@ namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't re
 
 	struct DisconnectionData 
 	{
+		DisconnectionData(DisconnectionType type) : Type(type) {}
 		DisconnectionData(DisconnectionType type, const std::string& address, uint16_t port, ConnectionID id) : Type(type), Address(address), Port(port), ID(id) {}
 
 		DisconnectionType Type	= DisconnectionType::INVALID;
