@@ -4,5 +4,5 @@
 
 struct TubesMessage : Message
 {
-	TubesMessage( MESSAGE_TYPE_ENUM_UNDELYING_TYPE type ) : Message( type, TubesMessageReplicator::TubesMessageReplicatorID ) {}
+	TubesMessage(MESSAGE_TYPE_ENUM_UNDELYING_TYPE type) : Message(type, TubesMessageReplicator::TubesMessageReplicatorID) {}
 };

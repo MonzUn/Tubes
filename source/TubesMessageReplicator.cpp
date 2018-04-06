@@ -14,32 +14,32 @@ using MUtility::Byte;
 
 #define LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR "TubesMessageReplicator"
 
-Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageSize* outMessageSize, Byte* optionalWritingBuffer )
+Byte* TubesMessageReplicator::SerializeMessage(const Message* message, MessageSize* outMessageSize, Byte* optionalWritingBuffer)
 {
 	// Attempt to get the message size
-	MessageSize messageSize = CalculateMessageSize( *message );
-	if ( messageSize == 0 )
+	MessageSize messageSize = CalculateMessageSize(*message);
+	if (messageSize == 0)
 		return nullptr;
 
 	// Set the out variable if applicable
-	if ( outMessageSize != nullptr )
+	if (outMessageSize != nullptr)
 		*outMessageSize = messageSize;
 
 	// Create a buffer to hold the serialized data
-	Byte* serializedMessage = (optionalWritingBuffer == nullptr) ? static_cast<Byte*>(malloc( messageSize ) ) : optionalWritingBuffer;
+	Byte* serializedMessage = (optionalWritingBuffer == nullptr) ? static_cast<Byte*>(malloc(messageSize)) : optionalWritingBuffer;
 	m_WritingWalker = serializedMessage;
 
 	// Write the message size
-	CopyAndIncrementDestination( m_WritingWalker, &messageSize, sizeof( MessageSize ) );
+	CopyAndIncrementDestination(m_WritingWalker, &messageSize, sizeof(MessageSize));
 
 	// Write the replicator ID
 	CopyAndIncrementDestination(m_WritingWalker, &message->Replicator_ID, sizeof(ReplicatorID));
 
 	// Write the message type variable
-	CopyAndIncrementDestination( m_WritingWalker, &message->Type, sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE ) );
+	CopyAndIncrementDestination(m_WritingWalker, &message->Type, sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE));
 
 	// Perform serialization specific to each message type (Use same order as in the type enums here)
-	switch ( message->Type )
+	switch (message->Type)
 	{
 		case CONNECTION_ID:
 		{
@@ -50,9 +50,9 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageS
 
 		default:
 		{
-			MLOG_WARNING( "Failed to find serialization logic for message of type " << message->Type <<"; the message will not be sent", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
-			if ( optionalWritingBuffer == nullptr ) // Only free the memory buffer if it wasn't supplied as a parameter
-				free( serializedMessage );
+			MLOG_WARNING("Failed to find serialization logic for message of type " << message->Type <<"; the message will not be sent", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR);
+			if (optionalWritingBuffer == nullptr) // Only free the memory buffer if it wasn't supplied as a parameter
+				free(serializedMessage);
 
 			serializedMessage = nullptr;
 		} break;
@@ -60,10 +60,10 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageS
 
 #if REPLICATOR_DEBUG
 	uint64_t differance = m_WritingWalker - serializedMessage;
-	if ( differance != messageSize )
+	if (differance != messageSize)
 	{
-		MLOG_ERROR( "SerializeMessage didn't write the expected amount of bytes", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
-		assert( false );
+		MLOG_ERROR("SerializeMessage didn't write the expected amount of bytes", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR);
+		assert(false);
 	}
 #endif
 
@@ -71,13 +71,13 @@ Byte* TubesMessageReplicator::SerializeMessage( const Message* message, MessageS
 	return serializedMessage;
 }
 
-Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer )
+Message* TubesMessageReplicator::DeserializeMessage(const Byte* const buffer)
 {
 	m_ReadingWalker = buffer;
 
 	// Read the message size
 	MessageSize messageSize;
-	CopyAndIncrementSource( &messageSize, m_ReadingWalker, sizeof( MessageSize ) );
+	CopyAndIncrementSource(&messageSize, m_ReadingWalker, sizeof(MessageSize));
 
 	// Read the replicator ID
 	ReplicatorID replicatorID;
@@ -87,8 +87,8 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer )
 
 	// Read the message type
 	uint64_t messageType;
-	CopyAndIncrementSource( &messageType, m_ReadingWalker, sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE ) );
-	switch ( messageType )
+	CopyAndIncrementSource(&messageType, m_ReadingWalker, sizeof(MESSAGE_TYPE_ENUM_UNDELYING_TYPE));
+	switch (messageType)
 	{
 		case CONNECTION_ID:
 		{
@@ -99,26 +99,25 @@ Message* TubesMessageReplicator::DeserializeMessage( const Byte* const buffer )
 
 		default:
 		{
-			MLOG_WARNING( "Failed to find deserialization logic for message of type " << deserializedMessage->Type << "; the message will be dropped", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
+			MLOG_WARNING("Failed to find deserialization logic for message of type " << deserializedMessage->Type << "; the message will be dropped", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR);
 			deserializedMessage = nullptr;
 		} break;
 	}
 
 #if REPLICATOR_DEBUG
 	uint64_t differance = m_ReadingWalker - buffer;
-	if ( differance != messageSize )
+	if (differance != messageSize)
 	{
-		MLOG_ERROR( "DeserializeMessage didn't read the expected amount of bytes", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR );
-		assert( false );
+		MLOG_ERROR("DeserializeMessage didn't read the expected amount of bytes", LOG_CATEGORY_TUBES_MESSAGE_REPLICATOR);
+		assert(false);
 	}
 #endif
 
 	m_ReadingWalker = nullptr;
-
 	return deserializedMessage;
 }
 
-int32_t TubesMessageReplicator::CalculateMessageSize( const Message& message ) const
+int32_t TubesMessageReplicator::CalculateMessageSize(const Message& message) const
 {
 	int32_t messageSize = 0;
 
@@ -128,7 +127,7 @@ int32_t TubesMessageReplicator::CalculateMessageSize( const Message& message ) c
 	messageSize += sizeof(MESSAGE_TYPE_ENUM_UNDELYING_TYPE);
 
 	// Add size specific to message
-	switch ( message.Type )
+	switch (message.Type)
 	{
 		case CONNECTION_ID :
 		{

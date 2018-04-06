@@ -14,7 +14,7 @@ namespace TubesMessages
 
 struct ConnectionIDMessage : TubesMessage
 {
-	ConnectionIDMessage( ConnectionID id ) : TubesMessage( TubesMessages::CONNECTION_ID ) { ID = id; }
+	ConnectionIDMessage(ConnectionID id) : TubesMessage(TubesMessages::CONNECTION_ID) { ID = id; }
 
 	ConnectionID ID;
 };

@@ -17,11 +17,11 @@ public:
 	void									ClearUserMessages();
 	void									ClearSimMessages();
 
-	bool operator==( const Subscriber& rhs );
+	bool operator==(const Subscriber& rhs);
 
 protected:
 	// Only children may Instantiate.
-	Subscriber( const std::string& name );
+	Subscriber(const std::string& name);
 	virtual ~Subscriber();
 
 	MESSAGE_TYPE_ENUM_UNDELYING_TYPE		m_SimInterests	= 0;
@@ -34,8 +34,8 @@ protected:
 
 private:
 	// No copying allowed!
-	Subscriber( const Subscriber& rhs );
-	Subscriber& operator=( const Subscriber& rhs );
+	Subscriber(const Subscriber& rhs) = delete;
+	Subscriber& operator=(const Subscriber& rhs) = delete;
 
 	std::string m_Name;
 };

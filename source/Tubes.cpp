@@ -24,7 +24,7 @@ using namespace Tubes;
 
 namespace Tubes
 {
-	ConnectionManager*	m_ConnectionManager;
+	ConnectionManager* m_ConnectionManager;
 
 	std::unordered_map<ReplicatorID, MessageReplicator*>*	m_ReplicatorReferences;
 	TubesMessageReplicator*									m_TubesMessageReplicator;
@@ -47,20 +47,20 @@ bool Tubes::Initialize()
 
 #if PLATFORM == PLATFORM_WINDOWS
 	WSADATA wsaData;
-	m_Initialized = WSAStartup( MAKEWORD( 2, 2 ), &wsaData ) == NO_ERROR; // Initialize WSA version 2.2
+	m_Initialized = WSAStartup(MAKEWORD( 2, 2 ), &wsaData) == NO_ERROR; // Initialize WSA version 2.2
 	if (!m_Initialized)
-		LogAPIErrorMessage( "Failed to initialize Tubes since WSAStartup failed", LOG_CATEGORY_GENERAL );
+		LogAPIErrorMessage("Failed to initialize Tubes since WSAStartup failed", LOG_CATEGORY_GENERAL);
 #else 
 	m_Initialized = true;
 #endif
 
-	if ( m_Initialized )
+	if (m_Initialized)
 	{
 		m_ConnectionManager = new ConnectionManager;
 		m_TubesMessageReplicator = new TubesMessageReplicator;
-		m_ReplicatorReferences->emplace( m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator );
+		m_ReplicatorReferences->emplace(m_TubesMessageReplicator->GetID(), m_TubesMessageReplicator);
 
-		MLOG_INFO( "Tubes initialized successfully", LOG_CATEGORY_GENERAL );
+		MLOG_INFO("Tubes initialized successfully", LOG_CATEGORY_GENERAL);
 	}
 
 	return m_Initialized;
@@ -92,12 +92,12 @@ void Tubes::Shutdown()
 
 	for ( int i = 0; i < m_ReceivedTubesMessages->size(); ++i )
 	{
-		free( (*m_ReceivedTubesMessages)[i] );
+		free((*m_ReceivedTubesMessages)[i]);
 	}
 	m_ReceivedTubesMessages->clear();
 	delete m_ReceivedTubesMessages;
 
-	MLOG_INFO( "Tubes has been shut down", LOG_CATEGORY_GENERAL );
+	MLOG_INFO("Tubes has been shut down", LOG_CATEGORY_GENERAL);
 	m_Initialized = false;
 }
 
@@ -109,28 +109,28 @@ void Tubes::Update()
 		return;
 	}
 
-	m_ConnectionManager->VerifyNewConnections( *m_TubesMessageReplicator );
+	m_ConnectionManager->VerifyNewConnections(*m_TubesMessageReplicator);
 	m_ConnectionManager->HandleFailedConnectionAttempts();
 
 	// Send queued messages
 	std::vector<ConnectionID> toDisconnect;
-	for ( auto& idAndConnection : m_ConnectionManager->GetVerifiedConnections() )
+	for (auto& idAndConnection : m_ConnectionManager->GetVerifiedConnections())
 	{
 		SendResult sendResult = idAndConnection.second->SendQueuedMessages();
-		if ( sendResult == SendResult::Disconnect )
+		if (sendResult == SendResult::Disconnect)
 		{
-			toDisconnect.push_back( idAndConnection.first );
+			toDisconnect.push_back(idAndConnection.first);
 			continue;
 		}
 	}
 
 	for ( int i = 0; i < toDisconnect.size(); ++i )
 	{
-		m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i] ); // TODODB: Update the disconnectionType here when we actually know if it was forceful or not
+		m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, toDisconnect[i]); // TODODB: Update the disconnectionType here when we actually know if it was forceful or not
 	}
 }
 
-void Tubes::SendToConnection( const Message* message, ConnectionID destinationConnectionID )
+void Tubes::SendToConnection(const Message* message, ConnectionID destinationConnectionID)
 {
 	if (!m_Initialized)
 	{
@@ -138,18 +138,18 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 		return;
 	}
 
-	Connection* connection = m_ConnectionManager->GetConnection( destinationConnectionID );
-	if ( connection != nullptr )
+	Connection* connection = m_ConnectionManager->GetConnection(destinationConnectionID);
+	if (connection != nullptr)
 	{
 		auto& idAndConnectionIterator = m_ReplicatorReferences->find(message->Replicator_ID);
 		if (idAndConnectionIterator != m_ReplicatorReferences->end() )
 		{
-			SendResult result = connection->SerializeAndSendMessage( *message, *idAndConnectionIterator->second);
-			switch ( result )
+			SendResult result = connection->SerializeAndSendMessage(*message, *idAndConnectionIterator->second);
+			switch (result)
 			{
 				case SendResult::Disconnect:
 				{
-					m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, destinationConnectionID ); // TODODB: Update the disconnectionType when we actually know if was forceful or not
+					m_ConnectionManager->Disconnect(DisconnectionType::REMOTE_FORCEFUL, destinationConnectionID); // TODODB: Update the disconnectionType when we actually know if was forceful or not
 				} break;
 
 				case SendResult::Sent:
@@ -160,13 +160,13 @@ void Tubes::SendToConnection( const Message* message, ConnectionID destinationCo
 			}
 		}
 		else
-			MLOG_WARNING( "Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL );
+			MLOG_WARNING("Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL);
 	}
 	else
-		MLOG_WARNING( "Failed to find requested connection while sending (Requested ID = " << destinationConnectionID + " )", LOG_CATEGORY_GENERAL);
+		MLOG_WARNING("Failed to find requested connection while sending (Requested ID = " << destinationConnectionID + " )", LOG_CATEGORY_GENERAL);
 }
 
-void Tubes::SendToAll( const Message* message, ConnectionID exception )
+void Tubes::SendToAll(const Message* message, ConnectionID exception)
 {
 	if (!m_Initialized)
 	{
@@ -175,35 +175,35 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 	}
 
 	auto& idAndReplicatorIterator = m_ReplicatorReferences->find(message->Replicator_ID);
-	if (idAndReplicatorIterator != m_ReplicatorReferences->end() )
+	if (idAndReplicatorIterator != m_ReplicatorReferences->end())
 	{
 		const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
 
 #if TUBES_DEBUG == 1
-		if ( exception != TUBES_INVALID_CONNECTION_ID )
+		if (exception != TUBES_INVALID_CONNECTION_ID)
 		{
 			bool exceptionExists = false;
-			for ( auto& idAndConnection : connections )
+			for (auto& idAndConnection : connections)
 			{
-				if ( idAndConnection.first == exception )
+				if (idAndConnection.first == exception)
 					exceptionExists = true;
 			}
 
-			if ( !exceptionExists )
-				MLOG_WARNING( "The excepted connectionID supplied to SendToAll does not exist", LOG_CATEGORY_GENERAL );
+			if (!exceptionExists)
+				MLOG_WARNING("The excepted connectionID supplied to SendToAll does not exist", LOG_CATEGORY_GENERAL);
 		}
 #endif
 		std::vector<ConnectionID> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
-		for ( auto& idAndConnection : connections )
+		for (auto& idAndConnection : connections)
 		{
-			if ( idAndConnection.first != exception )
+			if (idAndConnection.first != exception)
 			{	
 				SendResult result = idAndConnection.second->SerializeAndSendMessage(*message, *idAndReplicatorIterator->second);
-				switch ( result )
+				switch (result)
 				{
 					case SendResult::Disconnect:
 					{
-						toDisconnect.push_back( idAndConnection.first );
+						toDisconnect.push_back(idAndConnection.first);
 					} break;
 
 					case SendResult::Sent:
@@ -224,7 +224,7 @@ void Tubes::SendToAll( const Message* message, ConnectionID exception )
 		MLOG_WARNING("Attempted to send message for which no replicator has been registered. Replicator ID = " << message->Replicator_ID, LOG_CATEGORY_GENERAL);
 }
 
-void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionID>* outSenderIDs )
+void Tubes::Receive(std::vector<Message*>& outMessages, std::vector<ConnectionID>* outSenderIDs)
 {
 	if (!m_Initialized)
 	{
@@ -234,27 +234,27 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 
 	std::vector<std::pair<ConnectionID, DisconnectionType>> toDisconnect; // TODODB: Find a better way to disconnect connections while iterating over the connection map
 	const std::unordered_map<ConnectionID, Connection*>& connections = m_ConnectionManager->GetVerifiedConnections();
-	for ( auto& idAndConnection : connections )
+	for (auto& idAndConnection : connections)
 	{
 		bool disconnected = false;
 		Message* message = nullptr;
 		ReceiveResult result;
 		do
 		{
-			result = idAndConnection.second->Receive( *m_ReplicatorReferences, message );
-			switch ( result )
+			result = idAndConnection.second->Receive(*m_ReplicatorReferences, message);
+			switch (result)
 			{
 				case ReceiveResult::Fullmessage:
 				{
-					if ( message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID )
+					if (message->Replicator_ID == TubesMessageReplicator::TubesMessageReplicatorID)
 					{
-						m_ReceivedTubesMessages->push_back( reinterpret_cast<TubesMessage*>( message ) ); // We know that this is a tubes message
+						m_ReceivedTubesMessages->push_back(reinterpret_cast<TubesMessage*>(message)); // We know that this is a tubes message
 					}
 					else
 					{
-						outMessages.push_back( message );
-						if ( outSenderIDs )
-							outSenderIDs->push_back( idAndConnection.first );
+						outMessages.push_back(message);
+						if (outSenderIDs)
+							outSenderIDs->push_back(idAndConnection.first);
 					}
 				} break;
 
@@ -271,16 +271,16 @@ void Tubes::Receive( std::vector<Message*>& outMessages, std::vector<ConnectionI
 				default:
 					break;
 			}
-		} while ( result == ReceiveResult::Fullmessage && !disconnected );
+		} while (result == ReceiveResult::Fullmessage && !disconnected);
 	}
 
-	for ( int i = 0; i < toDisconnect.size(); ++i )
+	for (int i = 0; i < toDisconnect.size(); ++i)
 	{
 		m_ConnectionManager->Disconnect(toDisconnect[i].second, toDisconnect[i].first);
 	}
 }
 
-void Tubes::RequestConnection( const std::string& address, uint16_t port )
+void Tubes::RequestConnection(const std::string& address, uint16_t port)
 {
 	if (!m_Initialized)
 	{
@@ -391,7 +391,7 @@ bool Tubes::UnregisterConnectionCallback(ConnectionCallbackHandle handle)
 	return m_ConnectionManager->UnregisterConnectionCallback(handle);
 }
 
-DisconnectionCallbackHandle Tubes::RegisterDisconnectionCallback( DisconnectionCallbackFunction callbackFunction )
+DisconnectionCallbackHandle Tubes::RegisterDisconnectionCallback(DisconnectionCallbackFunction callbackFunction)
 {
 	DisconnectionCallbackHandle toReturn;
 	if (!m_Initialized)
@@ -425,7 +425,7 @@ uint32_t Tubes::GetConnectionCount()
 	return m_ConnectionManager->GetVerifiedConnctionCount();
 }
 
-ConnectionInfo Tubes::GetConnectionInfo(ConnectionID ID)
+ConnectionInfo Tubes::GetConnectionInfo(ConnectionID id)
 {
 	ConnectionInfo toReturn;
 	if (!m_Initialized)
@@ -434,20 +434,20 @@ ConnectionInfo Tubes::GetConnectionInfo(ConnectionID ID)
 		return toReturn;
 	}
 
-	if (!m_ConnectionManager->IsConnectionIDValid(ID))
+	if (!m_ConnectionManager->IsConnectionIDValid(id))
 	{
-		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << ID + " )", LOG_CATEGORY_GENERAL);
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << id + " )", LOG_CATEGORY_GENERAL);
 		return toReturn;
 	}
 
-	toReturn.ID = ID;
-	toReturn.Address = m_ConnectionManager->GetAddressOfConnection(ID);
-	toReturn.Port = m_ConnectionManager->GetPortOfConnection(ID);		
+	toReturn.ID = id;
+	toReturn.Address = m_ConnectionManager->GetAddressOfConnection(id);
+	toReturn.Port = m_ConnectionManager->GetPortOfConnection(id);		
 
 	return toReturn;
 }
 
-std::string Tubes::GetAddressOfConnection(ConnectionID ID)
+std::string Tubes::GetAddressOfConnection(ConnectionID id)
 {
 	if (!m_Initialized)
 	{
@@ -455,16 +455,16 @@ std::string Tubes::GetAddressOfConnection(ConnectionID ID)
 		return "";
 	}
 
-	if (!m_ConnectionManager->IsConnectionIDValid(ID))
+	if (!m_ConnectionManager->IsConnectionIDValid(id))
 	{
-		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << ID + " )", LOG_CATEGORY_GENERAL);
+		MLOG_WARNING("Attempted to get address of nonexistent connection (ID = " << id + " )", LOG_CATEGORY_GENERAL);
 		return "";
 	}
 
-	return m_ConnectionManager->GetAddressOfConnection(ID);	
+	return m_ConnectionManager->GetAddressOfConnection(id);	
 }
 
-uint16_t Tubes::GetPortOfConnection(ConnectionID ID)
+uint16_t Tubes::GetPortOfConnection(ConnectionID id)
 {
 	if (!m_Initialized)
 	{
@@ -472,13 +472,13 @@ uint16_t Tubes::GetPortOfConnection(ConnectionID ID)
 		return TUBES_INVALID_PORT;
 	}
 
-	if (!m_ConnectionManager->IsConnectionIDValid(ID))
+	if (!m_ConnectionManager->IsConnectionIDValid(id))
 	{
-		MLOG_WARNING("Attempted to get port of nonexistent connection (ID = " << ID + " )", LOG_CATEGORY_GENERAL);
+		MLOG_WARNING("Attempted to get port of nonexistent connection (ID = " << id + " )", LOG_CATEGORY_GENERAL);
 		return TUBES_INVALID_PORT;
 	}
 
-	return m_ConnectionManager->GetPortOfConnection(ID);
+	return m_ConnectionManager->GetPortOfConnection(id);
 }
 
 bool Tubes::IsValidIPv4Address(const char* ipv4String)

@@ -9,8 +9,8 @@ ReceiveBuffer::ReceiveBuffer()
 
 ReceiveBuffer::~ReceiveBuffer()
 {
-	if ( PayloadData != nullptr )
-		free( PayloadData );
+	if (PayloadData != nullptr)
+		free(PayloadData);
 }
 
 void ReceiveBuffer::Reset()

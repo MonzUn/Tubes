@@ -1,13 +1,13 @@
 #include "Subscriber.h"
 
-Subscriber::Subscriber( const std::string& name )
+Subscriber::Subscriber(const std::string& name)
 {
 	m_Name = name;
 }
 
-Subscriber::~Subscriber( ) { }
+Subscriber::~Subscriber() { }
 
-bool Subscriber::operator==( const Subscriber& rhs )
+bool Subscriber::operator==(const Subscriber& rhs)
 {
 	return this->m_Name == rhs.m_Name;
 }
@@ -27,17 +27,17 @@ const std::string& Subscriber::GetNameAsSubscriber() const
 	return m_Name;
 }
 
-void Subscriber::AddUserMessage( const UserMessage* message )
+void Subscriber::AddUserMessage(const UserMessage* message)
 {
 	m_UserLock.lock();
-	m_UserMessages.push_back( message );
+	m_UserMessages.push_back(message);
 	m_UserLock.unlock();
 }
 
-void Subscriber::AddSimMessage( const SimulationMessage* message )
+void Subscriber::AddSimMessage(const SimulationMessage* message)
 {
 	m_SimLock.lock();
-	m_SimMessages.push_back( message );
+	m_SimMessages.push_back(message);
 	m_SimLock.unlock();
 }
 

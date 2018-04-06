@@ -14,18 +14,18 @@ public:
  	MessageManager();
 	virtual ~MessageManager();
 
-	virtual bool	RegisterSubscriber( Subscriber*	subscriberToRegister );
-	virtual bool	UnregisterSubscriber( const Subscriber* const subscriberToUnregister );
+	virtual bool	RegisterSubscriber(Subscriber* subscriberToRegister);
+	virtual bool	UnregisterSubscriber(const Subscriber* const subscriberToUnregister);
 
 	// TODODB: Add functionality for sending to specific subscribers
-	virtual void	SendImmediateUserMessage		( UserMessage* message );
-	virtual void	SendImmediateSimulationMessage	( SimulationMessage* message ); // This function must never race with DeliverQueuedSimMessages since that may mess up the message order and thereby the simulation.
-	virtual void	EnqueueUserMessage				( UserMessage* message );
-	virtual void	EnqueueSimulationMessage		( SimulationMessage* message );
+	virtual void	SendImmediateUserMessage		(UserMessage* message);
+	virtual void	SendImmediateSimulationMessage	(SimulationMessage* message); // This function must never race with DeliverQueuedSimMessages since that may mess up the message order and thereby the simulation.
+	virtual void	EnqueueUserMessage				(UserMessage* message);
+	virtual void	EnqueueSimulationMessage		(SimulationMessage* message);
 
 protected:
 	virtual void	DeliverQueuedUserMessages();
-	virtual void	DeliverQueuedSimulationMessages( uint64_t currentFrame );
+	virtual void	DeliverQueuedSimulationMessages(uint64_t currentFrame);
 
 	virtual void	ClearDeliveredUserMessages();
 	virtual void	ClearDeliveredSimulationMessages();
@@ -42,11 +42,11 @@ protected:
 
 private:
 	// Only one instance of each subsystem should exist so copying and comparing is illegal.
-	MessageManager( const MessageManager& rhs );
-	MessageManager& operator=( const MessageManager& rhs );
+	MessageManager(const MessageManager& rhs);
+	MessageManager& operator=(const MessageManager& rhs);
 
-	void DeliverUserMessage			( UserMessage* message );
-	void DeliverSimulationMessage	( SimulationMessage* message );
+	void DeliverUserMessage			(UserMessage* message);
+	void DeliverSimulationMessage	(SimulationMessage* message);
 	void CalculateInterests			();
 
 	MESSAGE_TYPE_ENUM_UNDELYING_TYPE		m_TotalSimInterests	 = 0;

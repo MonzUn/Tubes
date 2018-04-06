@@ -3,13 +3,13 @@
 #include "MessagingTypes.h"
 
 #define MESSAGE_TYPE_ENUM_UNDELYING_TYPE uint64_t
-#define MESSAGE_TYPE_HALF_BIT_SIZE ( sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE ) * 4 ) // *4 since we want the bit count instead of byte count and we want half the size (8/2)
-#define MESSAGE_TYPE_BITFLAG_MIDDLE ( 1ULL << MESSAGE_TYPE_HALF_BIT_SIZE )
+#define MESSAGE_TYPE_HALF_BIT_SIZE (sizeof( MESSAGE_TYPE_ENUM_UNDELYING_TYPE) * 4) // *4 since we want the bit count instead of byte count and we want half the size (8/2)
+#define MESSAGE_TYPE_BITFLAG_MIDDLE (1ULL << MESSAGE_TYPE_HALF_BIT_SIZE)
 
 struct Message
 {
 public:
-	Message( MESSAGE_TYPE_ENUM_UNDELYING_TYPE type, ReplicatorID replicatorID ) : Type( type ), Replicator_ID( replicatorID ) {}
+	Message(MESSAGE_TYPE_ENUM_UNDELYING_TYPE type, ReplicatorID replicatorID) : Type(type), Replicator_ID(replicatorID) {}
 
 	virtual void Destroy() {};
 	

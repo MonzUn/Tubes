@@ -80,9 +80,9 @@ void Listener::Listen()
 {
 	do
 	{
-		Socket					incomingConnectionSocket;
-		sockaddr_in				incomingConnectionInfo;
-		socklen_t				incomingConnectionInfoLength = sizeof(incomingConnectionInfo);
+		Socket incomingConnectionSocket;
+		sockaddr_in incomingConnectionInfo;
+		socklen_t incomingConnectionInfoLength = sizeof(incomingConnectionInfo);
 
 		// Wait for a connection or fetch one from the backlog
 		incomingConnectionSocket = static_cast<Socket>(accept(m_ListeningSocket, reinterpret_cast<sockaddr*>(&incomingConnectionInfo), &incomingConnectionInfoLength)); // Blocking

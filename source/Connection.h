@@ -17,8 +17,8 @@ enum class	ReceiveResult;
 class Connection
 {
 public:
-	Connection( Socket connectionSocket, const std::string& destinationAddress, Port destinationPort );
-	Connection( Socket connectionSocket, const sockaddr_in& destination );
+	Connection(Socket connectionSocket, const std::string& destinationAddress, Port destinationPort);
+	Connection(Socket connectionSocket, const sockaddr_in& destination);
 	~Connection();
 
 	Tubes::ConnectionAttemptResult	Connect();
@@ -29,8 +29,8 @@ public:
 
 	SendResult SendQueuedMessages();
 
-	bool operator == ( const Connection& other ) const { return this->m_Address == other.m_Address && this->m_Socket == other.m_Socket; }
-	bool operator != ( const Connection& other ) const { return this->m_Address != other.m_Address || this->m_Socket != other.m_Socket; }
+	bool operator == (const Connection& other) const { return this->m_Address == other.m_Address && this->m_Socket == other.m_Socket; }
+	bool operator != (const Connection& other) const { return this->m_Address != other.m_Address || this->m_Socket != other.m_Socket; }
 
 	Address	GetAddress() const { return m_Address; }
 	Port	GetPort() const { return m_Port; }

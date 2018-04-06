@@ -38,25 +38,25 @@ uint32_t Connection::ConnectionTimeout = DEFAULT_CONNECTION_TIMEOUT_SECONDS;
 
 // ---------- PUBLIC ----------
 
-Connection::Connection( Socket connectionSocket, const std::string& destinationAddress, Port destinationPort )
+Connection::Connection(Socket connectionSocket, const std::string& destinationAddress, Port destinationPort)
 {
 	m_Socket	= connectionSocket;
-	m_Address	= TubesUtility::IPv4StringToAddress( destinationAddress ); // TODODB: Handle ipv6
+	m_Address	= TubesUtility::IPv4StringToAddress(destinationAddress); // TODODB: Handle ipv6
 	m_Port		= destinationPort;
 
-	memset( &m_Sockaddr, 0, sizeof(sockaddr_in) );
+	memset(&m_Sockaddr, 0, sizeof(sockaddr_in));
 	m_Sockaddr.sin_family		= AF_INET;
-	m_Sockaddr.sin_addr.s_addr	= htonl( m_Address );
-	m_Sockaddr.sin_port			= htons( m_Port );
+	m_Sockaddr.sin_addr.s_addr	= htonl(m_Address);
+	m_Sockaddr.sin_port			= htons(m_Port);
 }
 
-Connection::Connection( Socket connectionSocket, const sockaddr_in& destination )
+Connection::Connection(Socket connectionSocket, const sockaddr_in& destination)
 {
 	m_Socket	= connectionSocket;
-	m_Address	= ntohl( destination.sin_addr.s_addr );
-	m_Port		= ntohs( destination.sin_port );		// Local port if destination is a received connection
+	m_Address	= ntohl(destination.sin_addr.s_addr);
+	m_Port		= ntohs(destination.sin_port);		// Local port if destination is a received connection
 
-	memset( &m_Sockaddr, 0, sizeof( sockaddr_in ) );
+	memset(&m_Sockaddr, 0, sizeof(sockaddr_in));
 	m_Sockaddr.sin_family		= AF_INET;
 	m_Sockaddr.sin_addr.s_addr	= destination.sin_addr.s_addr;
 	m_Sockaddr.sin_port			= destination.sin_port;
@@ -66,7 +66,7 @@ Connection::~Connection()
 {
 	while(!m_UnsentMessages.empty())
 	{
-		free( m_UnsentMessages.front().Message );
+		free(m_UnsentMessages.front().Message);
 		m_UnsentMessages.pop();
 	}
 }
