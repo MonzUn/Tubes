@@ -1,7 +1,7 @@
 #include "MessageReplicator.h"
 #include <MUtilitySerialization.h>
 
-MessageReplicator::MessageReplicator( ReplicatorID id )
+MessageReplicator::MessageReplicator(ReplicatorID id)
 {
 	m_ID = id;
 }
@@ -9,6 +9,11 @@ MessageReplicator::MessageReplicator( ReplicatorID id )
 ReplicatorID MessageReplicator::GetID() const
 {
 	return m_ID;
+}
+
+void MessageReplicator::WriteMemory(const void* value, uint32_t byteSize)
+{
+	MUtility::Serialization::CopyAndIncrementDestination(m_WritingWalker, value, byteSize);
 }
 
 void MessageReplicator::WriteInt16(int16_t value)
@@ -59,6 +64,11 @@ void MessageReplicator::WriteBool(bool value)
 void MessageReplicator::WriteString(const std::string& value)
 {
 	MUtility::Serialization::WriteString(value, m_WritingWalker);
+}
+
+void MessageReplicator::ReadMemory(void* value, uint32_t byteSize)
+{
+	MUtility::Serialization::CopyAndIncrementSource(value, m_ReadingWalker, byteSize);
 }
 	 
 void MessageReplicator::ReadInt16(int16_t& value)
