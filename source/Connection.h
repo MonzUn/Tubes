@@ -11,8 +11,31 @@
 #include <netinet/in.h> // for sockaddr_in
 #endif
 
-enum class	SendResult;
-enum class	ReceiveResult;
+enum class ConnectionType
+{
+	Outgoing,
+	Incoming,
+
+	Invalid,
+};
+
+enum class SendResult
+{
+	Sent,
+	Queued,
+	Disconnect,
+	Error,
+};
+
+enum class ReceiveResult
+{
+	Fullmessage,
+	PartialMessage,
+	Empty,
+	ForcefulDisconnect,
+	GracefulDisconnect,
+	Error,
+};
 
 class Connection
 {
@@ -54,25 +77,8 @@ private:
 	Socket						m_Socket;
 	Address						m_Address;
 	Port						m_Port;
+	ConnectionType				m_ConnectionType = ConnectionType::Invalid;
 	struct sockaddr_in			m_Sockaddr;
 	ReceiveBuffer				m_ReceiveBuffer;
 	std::queue<MessageAndSize>	m_UnsentMessages;
-};
-
-enum class SendResult
-{
-	Sent,
-	Queued,
-	Disconnect,
-	Error,
-};
-
-enum class ReceiveResult
-{
-	Fullmessage,
-	PartialMessage,
-	Empty,
-	ForcefulDisconnect,
-	GracefulDisconnect,
-	Error,
 };

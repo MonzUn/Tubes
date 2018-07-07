@@ -10,7 +10,7 @@
 
 namespace Tubes // TODODB: Replace the callback handles so that Tubes doesn't rely on external code for this
 {
-	typedef int32_t	ConnectionID;
+	typedef int32_t	ConnectionID; // TODODB: Switch to a strongID type
 
 	enum class ConnectionAttemptResult : uint32_t
 	{
